@@ -1,12 +1,12 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, HostParam, Req } from '@nestjs/common';
 import { AppService } from './app.service';
 
-@Controller()
+@Controller({ host: ':version.api.localhost' })
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
   @Get()
-  getHello(): string {
-    return this.appService.getHello();
+  index(@HostParam('version') version: string): string {
+    return `Hello, API Version ${version}`;
   }
 }
