@@ -11,22 +11,24 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    const { name, email } = createUserDto
+  async create(@Body() dto: CreateUserDto) {
+    const { name, email, password } = dto
 
-    return `유저를 생성했습니다. 이름: ${name}, 이메일: ${email}`;
+    await this.usersService.createUser(name, email, password);
   }
 
   @Post('/email-verify')
-  async verifyEmail(@Query() dto: VerifyEmailDto): Promise<string> { // 1
-    console.log(dto);
-    return;
+  async verifyEmail(@Query() dto: VerifyEmailDto): Promise<string> {
+    const { signupVerifyToken } = dto;
+
+    return await this.usersService.verifyEmail(signupVerifyToken);
   }
 
   @Post('/login')
-  async login(@Body() dto: UserLoginDto): Promise<string> { // 2
-    console.log(dto);
-    return;
+  async login(@Body() dto: UserLoginDto): Promise<string> { 
+    const { email, password } = dto;
+
+    return await this.usersService.login(email, password);
   }
 
   @Get()
@@ -47,10 +49,9 @@ export class UsersController {
     return this.usersService.findOne(+id);
   }
 
-  @Get('/:id') // 3
-  async getUserInfo(@Param('id') userId: string): Promise<UserInfo> {
-    console.log(userId);
-    return;
+  @Get('/:userId')
+  async getUserInfo(@Param('userId') userId: string) {
+    return await this.usersService.getUserInfo(userId);
   }
 
   @Patch(':id')
