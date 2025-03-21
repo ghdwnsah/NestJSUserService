@@ -5,7 +5,6 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { UserLoginDto } from './dto/login-user.dto';
 import { UserInfo } from './userInfo';
-import { ValidationPipe } from 'src/validation.pipe';
 
 @Controller('users')
 export class UsersController {
