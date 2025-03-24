@@ -1,0 +1,7 @@
+model User {
+  id                String @id
+  name              String @db.VarChar(30)
+  email             String @db.VarChar(60)
+  password          String @db.VarChar(30)
+  signupVerifyToken String @db.VarChar(60)
+}

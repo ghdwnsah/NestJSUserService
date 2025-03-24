@@ -1,15 +1,19 @@
 import * as uuid from 'uuid';
 
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { EmailService } from 'src/email/email.service';
 import { UserInfo } from './userInfo';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class UsersService {
-  constructor(private emailService: EmailService) {}
+  constructor(
+    private emailService: EmailService,
+    private prisma: PrismaService,
+  ) {}
 
 
   async createUser(name: string, email: string, password: string) {
@@ -22,11 +26,16 @@ export class UsersService {
     return 'This action adds a new user';
   }
 
-  private checkUserExists(email: string) {
+  private async checkUserExists(email: string) {
+    const exists = await this.prisma.user.findFirst({ where: { email } });
+    if (exists) throw new ConflictException('User already exists');
+
     return false; // TODO: DB 연동 후 구현
   }
 
   private saveUser(name: string, email: string, password: string, signupVerifyToken: string){
+
+
     return; // TODO: DB 연동 후 구현
   }
 
