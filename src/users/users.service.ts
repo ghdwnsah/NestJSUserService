@@ -1,16 +1,20 @@
 import * as uuid from 'uuid';
+import * as bcrypt from 'bcrypt';
 
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, NotAcceptableException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { EmailService } from 'src/email/email.service';
 import { UserInfo } from './userInfo';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { AuthService } from 'src/auth/auth.service';
+import { ulid } from 'ulid';
 
 @Injectable()
 export class UsersService {
   constructor(
+    private authService: AuthService,
     private emailService: EmailService,
     private prisma: PrismaService,
   ) {}
@@ -19,24 +23,31 @@ export class UsersService {
   async createUser(name: string, email: string, password: string) {
     await this.checkUserExists(email);  // 이메일 기반 중복 유저
 
+    const hashedPassword = await bcrypt.hash(password, 10);
     const signupVerifyToken = uuid.v1();
 
-    await this.saveUser(name, email, password, signupVerifyToken);
-
-    return 'This action adds a new user';
+    await this.saveUser(name, email, hashedPassword, signupVerifyToken);
+    await this.sendMemberJoinEmail(email, signupVerifyToken);
   }
 
   private async checkUserExists(email: string) {
     const exists = await this.prisma.user.findFirst({ where: { email } });
     if (exists) throw new ConflictException('User already exists');
 
-    return false; // TODO: DB 연동 후 구현
+    return false;
   }
 
-  private saveUser(name: string, email: string, password: string, signupVerifyToken: string){
-
-
-    return; // TODO: DB 연동 후 구현
+  private async saveUser(name: string, email: string, hashedPassword: string, signupVerifyToken: string){
+    await this.prisma.user.create({
+      data: {
+        id: ulid(),
+        name,
+        email,
+        password: hashedPassword,
+        signupVerifyToken,
+        verified: false,
+      },
+    });
   }
 
   private async sendMemberJoinEmail(email: string, signupVerifyToken: string){
@@ -46,17 +57,37 @@ export class UsersService {
 
 
   async verifyEmail(signupVerifyToken: string): Promise<string> {
-    //TODO
-    //1. DB에서 signupVerifyToken으로 회원 가입 처리중인 유저가 있는지 조회하고 없다면 에러 처리
-    //2. 바로 로그인 상태가 되도록 JWT를 발급
+    const user = await this.prisma.user.findFirst({ where: { signupVerifyToken } });
+    if (!user) throw new NotFoundException('유저가 존재하지 않습니다.');
+    if (user.verified) throw new NotAcceptableException('이미 가입이 완료된 유저입니다.');
 
-    throw new Error('Method not implemented');
-  }
+    await this.prisma.user.update({
+      where: { email: user.email },
+      data: { verified: true },
+    });
+  
+    return this.authService.login({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+    });
+  }// TODO: 테스트
 
 
 
   async login(email: string, password: string) {
-    return 'test';
+    const user = await this.prisma.user.findFirst({ where: { email } });
+    if (!user) throw new NotFoundException('유저가 존재하지 않습니다.');
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) throw new UnauthorizedException('비밀번호가 틀렸습니다.');
+    if (!user.verified) throw new UnauthorizedException('이메일 인증이 아직 끝나지 않았습니다.');
+
+    return this.authService.login({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+    });
   }
 
   async getUserInfo(userId: string): Promise<UserInfo> {
