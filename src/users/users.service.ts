@@ -10,6 +10,8 @@ import { UserInfo } from './userInfo';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { AuthService } from 'src/auth/auth.service';
 import { ulid } from 'ulid';
+import { userInfo } from 'os';
+import { UserLoginDto } from './dto/login-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -91,14 +93,15 @@ export class UsersService {
   }
 
   async getUserInfo(userId: string): Promise<UserInfo> {
-    // TODO
-    // 1. userId를 가진 유저가 존재하는지 DB에서 확인하고 없다면 에러 처리
-    // 2. 조회된 데이터를 UserInfo 타입으도 응답
+    const user = await this.prisma.user.findFirst({ where: { id: userId } });
+    if (!user) throw new NotFoundException('유저가 존재하지 않습니다.');
 
-    throw new Error('Method not implemented.');
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+    }
   }
-
-  
 
   findAll() {
     return `This action returns all users`;

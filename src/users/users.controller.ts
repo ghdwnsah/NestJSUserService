@@ -1,14 +1,21 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Res, BadRequestException, Query, ParseIntPipe, HttpStatus, DefaultValuePipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Res, BadRequestException, Query, ParseIntPipe, HttpStatus, DefaultValuePipe, Headers, UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { UserLoginDto } from './dto/login-user.dto';
 import { UserInfo } from './userInfo';
+import { AuthService } from 'src/auth/auth.service';
+import { AuthGuard } from 'src/auth/auth.guard';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { User } from 'src/auth/user.decorator';
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly authService: AuthService,
+  ) {}
 
   @Post()
   async create(@Body() dto: CreateUserDto) {
@@ -44,17 +51,10 @@ export class UsersController {
             .send(users);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get('/:id')
-  findOne(@Param('id', new ParseIntPipe({ errorHttpStatusCode: HttpStatus.NOT_ACCEPTABLE })) id: number) {
-    if (id < 1) {
-      throw new BadRequestException('id는 0보다 큰 값이어야 합니다.');
-    }
-
-    return this.usersService.findOne(id);
-  }
-
-  @Get('/:userId')
-  async getUserInfo(@Param('userId') userId: string) {
+  async getUserInfo(@User() user, @Param('id') userId: string) {
+    console.log('user : ', user)
     return await this.usersService.getUserInfo(userId);
   }
 
