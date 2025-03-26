@@ -6,4 +6,5 @@ model User {
   signupVerifyToken String @db.VarChar(60)
   verified          Boolean @default(false)
   createdAt         DateTime @default(now())
+  refreshTokens     RefreshToken[]
 }

@@ -1,4 +1,13 @@
-// This is your Prisma schema file,
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isValid   Boolean  @default(true)
+  ip        String?  // 탈취 감지용 IP 저장
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+}// This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
@@ -19,4 +28,5 @@ datasource db {
   signupVerifyToken String @db.VarChar(60)
   verified          Boolean @default(false)
   createdAt         DateTime @default(now())
+  refreshTokens     RefreshToken[]
 }
