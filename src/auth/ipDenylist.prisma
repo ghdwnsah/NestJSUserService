@@ -1,0 +1,5 @@
+model IpDenylist {
+  ip     String @id
+  reason String
+  createdAt DateTime @default(now())
+}

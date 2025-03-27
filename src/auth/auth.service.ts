@@ -1,5 +1,5 @@
 import * as jwt from 'jsonwebtoken';
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { privateDecrypt } from 'crypto';
 import { JwtService } from '@nestjs/jwt';
@@ -18,28 +18,14 @@ export class AuthService {
         private readonly prismaService: PrismaService
     ) {}
 
-    login(user: UserInfo) {
-        console.log('login 호출')
-        const payload = { ...user };
-
-        // return jwt.sign(payload, this.config.jwtSecret, {
-        //     expiresIn: '1d',
-        //     audience: 'hong.com',
-        //     issuer: 'hong.com',
-        // });
-
-        return this.jwtService.sign({ 
-            sub: user.id, 
-            email: user.email,
-            audience: 'hong.com',
-            issuer: 'hong.com',
-        });
+    login(user: UserInfo, ip: string) {
+        return this.generateTokens(user, ip);
     }
 
     // TODO : nest jwt 버전으로 수정
     verify(jwtString: string) {
         try {
-            const payload = jwt.verify(jwtString, this.config.jwtSecret) as (jwt.JwtPayload | string) & UserInfo
+            const payload = this.jwtService.verify(jwtString);
             const {id, email} = payload;
             return {
                 userId: id,
@@ -51,11 +37,8 @@ export class AuthService {
     }
 
     async generateTokens(user: UserInfo, ip: string) {
-        const accessToken = this.jwtService.sign({ sub: user.id, email: user.email }, {
-          expiresIn: '15m',
-          audience: 'hong.com',
-          issuer: 'hong.com',
-        });
+        const payload = { ...user };
+        const accessToken = this.jwtService.sign(payload);
     
         const refreshToken = uuidv4();
         const expiresAt = addMinutes(new Date(), 60 * 24 * 14); // 14일
@@ -71,7 +54,7 @@ export class AuthService {
     
         return { accessToken, refreshToken };
       }
-
+    
       async refreshTokens(refreshToken: string, ip: string) {
         const tokenRecord = await this.prismaService.refreshToken.findUnique({ where: { token: refreshToken } });
     
@@ -98,6 +81,13 @@ export class AuthService {
         return this.generateTokens(user, ip);
       }
     
+      async revokeRefreshToken(refreshToken: string) {
+        await this.prismaService.refreshToken.updateMany({
+          where: { token: refreshToken },
+          data: { isValid: false },
+        });
+      }
+    
       async invalidateUserTokens(userId: string) {
         await this.prismaService.refreshToken.updateMany({
           where: { userId, isValid: true },
@@ -107,8 +97,25 @@ export class AuthService {
     
       async handleTokenTheft(userId: string, suspiciousIp: string) {
         await this.invalidateUserTokens(userId);
+    
         console.warn(`[SECURITY] Refresh token theft suspected from IP: ${suspiciousIp}`);
-        // TODO: notify user via email or system log
-        // TODO: add suspicious IP to denylist (optional)
+    
+        // Example: Add IP to denylist table
+        await this.prismaService.ipDenylist.upsert({
+          where: { ip: suspiciousIp },
+          update: {},
+          create: { ip: suspiciousIp, reason: 'Token theft suspected' },
+        });
+    
+        // Example: Send Slack or Email alert (stub)
+        this.notifySecurityTeam(userId, suspiciousIp);
+      }
+
+      async notifySecurityTeam(userId: string, ip: string) {
+        console.log(`[ALERT] Notifying security team about possible breach by user ${userId} from IP ${ip}`);
+    
+        // TODO: Replace with email or Slack API integration
+        // emailService.sendAlert(userId, ip);
+        // slackService.sendMessage(`#security`, `🚨 Token theft from IP ${ip} for user ${userId}`);
       }
 }

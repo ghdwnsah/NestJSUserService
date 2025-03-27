@@ -58,7 +58,7 @@ export class UsersService {
 
 
 
-  async verifyEmail(signupVerifyToken: string): Promise<string> {
+  async verifyEmail(signupVerifyToken: string, ip: string): Promise<object> {
     const user = await this.prisma.user.findFirst({ where: { signupVerifyToken } });
     if (!user) throw new NotFoundException('유저가 존재하지 않습니다.');
     if (user.verified) throw new NotAcceptableException('이미 가입이 완료된 유저입니다.');
@@ -72,24 +72,32 @@ export class UsersService {
       id: user.id,
       name: user.name,
       email: user.email,
-    });
+    }, ip);
   }// TODO: 테스트
 
 
 
-  async login(email: string, password: string) {
-    const user = await this.prisma.user.findFirst({ where: { email } });
-    if (!user) throw new NotFoundException('유저가 존재하지 않습니다.');
-
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) throw new UnauthorizedException('비밀번호가 틀렸습니다.');
-    if (!user.verified) throw new UnauthorizedException('이메일 인증이 아직 끝나지 않았습니다.');
-
+  async login(email: string, password: string, ip: string) {
+    const user = await this.validateUser(email, password);
     return this.authService.login({
       id: user.id,
       name: user.name,
       email: user.email,
-    });
+    }, ip);
+  }
+
+  async validateUser(email: string, password: string) {
+    try {
+      const user = await this.prisma.user.findUnique({ where: { email } });
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      
+      if (!user || !isPasswordValid) throw new UnauthorizedException('아이디나 비밀번호가 틀렸습니다.');       
+      else if (!user.verified) throw new UnauthorizedException('이메일 인증이 아직 끝나지 않았습니다.');
+      
+      return user;
+    } catch (e) {
+      throw new UnauthorizedException('아이디나 비밀번호가 틀렸습니다.');
+    }
   }
 
   async getUserInfo(userId: string): Promise<UserInfo> {

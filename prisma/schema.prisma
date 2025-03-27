@@ -1,4 +1,8 @@
-model RefreshToken {
+model IpDenylist {
+  ip     String @id
+  reason String
+  createdAt DateTime @default(now())
+}model RefreshToken {
   id        String   @id @default(uuid())
   token     String   @unique
   userId    String
