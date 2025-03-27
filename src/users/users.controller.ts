@@ -25,14 +25,14 @@ export class UsersController {
   }
 
   @Post('/email-verify')
-  async verifyEmail(@Query() dto: VerifyEmailDto, @Ip() ip): Promise<object> {
+  async verifyEmail(@Query() dto: VerifyEmailDto, @Ip() ip: string): Promise<object> {
     const { signupVerifyToken } = dto;
 
     return await this.usersService.verifyEmail(signupVerifyToken, ip);
   }
 
   @Post('/login')
-  async login(@Body() dto: UserLoginDto, @Ip() ip): Promise<object> { 
+  async login(@Body() dto: UserLoginDto, @Ip() ip: string): Promise<object> { 
     const { email, password } = dto;
 
     const user = await this.usersService.validateUser(email, password);
