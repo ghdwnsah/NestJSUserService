@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Res, BadRequestException, Query, ParseIntPipe, HttpStatus, DefaultValuePipe, Headers, UseGuards, Req, Ip } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Res, BadRequestException, Query, ParseIntPipe, HttpStatus, DefaultValuePipe, Headers, UseGuards, Req, Ip, ValidationPipe } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -52,9 +52,12 @@ export class UsersController {
             .send(users);
   }
 
+  // TODO : DTO 처리 후 타입 변경
   @UseGuards(JwtAuthGuard)
   @Get('/:id')
-  async getUserInfo(@User() user: string, @Param('id') userId: string) {
+  async getUserInfo(@User(
+      new ValidationPipe({ validateCustomDecorators: true })
+    ) user: string, @Param('id') userId: string) {
     console.log('user : ', user)
     return await this.usersService.getUserInfo(userId);
   }
