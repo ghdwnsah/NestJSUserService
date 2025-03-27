@@ -6,7 +6,6 @@ import { VerifyEmailDto } from './dto/verify-email.dto';
 import { UserLoginDto } from './dto/login-user.dto';
 import { UserInfo } from './userInfo';
 import { AuthService } from 'src/auth/auth.service';
-import { AuthGuard } from 'src/auth/auth.guard';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { User } from 'src/auth/user.decorator';
 
@@ -55,7 +54,7 @@ export class UsersController {
 
   @UseGuards(JwtAuthGuard)
   @Get('/:id')
-  async getUserInfo(@User() user, @Param('id') userId: string) {
+  async getUserInfo(@User() user: string, @Param('id') userId: string) {
     console.log('user : ', user)
     return await this.usersService.getUserInfo(userId);
   }

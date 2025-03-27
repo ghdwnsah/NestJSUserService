@@ -22,13 +22,13 @@ export class AuthService {
         return this.generateTokens(user, ip);
     }
 
-    // TODO : nest jwt 버전으로 수정
     verify(jwtString: string) {
         try {
             const payload = this.jwtService.verify(jwtString);
-            const {id, email} = payload;
+            const {id, name, email} = payload;
             return {
-                userId: id,
+                id,
+                name,
                 email
             }
         } catch (e) {
