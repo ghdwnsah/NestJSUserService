@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Res, BadRequestException, Query, ParseIntPipe, HttpStatus, DefaultValuePipe, Headers, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Res, BadRequestException, Query, ParseIntPipe, HttpStatus, DefaultValuePipe, Headers, UseGuards, Req, Ip } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -25,20 +25,17 @@ export class UsersController {
   }
 
   @Post('/email-verify')
-  async verifyEmail(@Query() dto: VerifyEmailDto, @Req() req): Promise<object> {
+  async verifyEmail(@Query() dto: VerifyEmailDto, @Ip() ip): Promise<object> {
     const { signupVerifyToken } = dto;
-
-    const ip = req.ip || req.headers['x-forwarded-for'] || 'unknown';
 
     return await this.usersService.verifyEmail(signupVerifyToken, ip);
   }
 
   @Post('/login')
-  async login(@Body() dto: UserLoginDto, @Req() req): Promise<object> { 
+  async login(@Body() dto: UserLoginDto, @Ip() ip): Promise<object> { 
     const { email, password } = dto;
 
     const user = await this.usersService.validateUser(email, password);
-    const ip = req.ip || req.headers['x-forwarded-for'] || 'unknown';
 
     return await this.usersService.login(email, password, ip);
   }
