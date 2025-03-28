@@ -23,6 +23,8 @@ export class UsersController {
     await this.usersService.createUser(name, email, password);
   }
 
+  
+
   @Post('/email-verify')
   async verifyEmail(@Query() dto: VerifyEmailDto, @Ip() ip: string): Promise<object> {
     const { signupVerifyToken } = dto;
