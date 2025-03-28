@@ -1,0 +1,5 @@
+model Client {
+  id     String @id @default(uuid())
+  name   String
+  users  User[]
+}
