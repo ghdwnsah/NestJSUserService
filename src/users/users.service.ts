@@ -18,7 +18,7 @@ export class UsersService {
   constructor(
     private authService: AuthService,
     private emailService: EmailService,
-    private prisma: PrismaService,
+    private prismaService: PrismaService,
   ) {}
 
 
@@ -33,14 +33,14 @@ export class UsersService {
   }
 
   private async checkUserExists(email: string) {
-    const exists = await this.prisma.user.findFirst({ where: { email } });
+    const exists = await this.prismaService.user.findFirst({ where: { email } });
     if (exists) throw new ConflictException('User already exists');
 
     return false;
   }
 
   private async saveUser(name: string, email: string, hashedPassword: string, signupVerifyToken: string){
-    await this.prisma.user.create({
+    await this.prismaService.user.create({
       data: {
         id: ulid(),
         name,
@@ -59,11 +59,11 @@ export class UsersService {
 
 
   async verifyEmail(signupVerifyToken: string, ip: string): Promise<object> {
-    const user = await this.prisma.user.findFirst({ where: { signupVerifyToken } });
+    const user = await this.prismaService.user.findFirst({ where: { signupVerifyToken } });
     if (!user) throw new NotFoundException('유저가 존재하지 않습니다.');
     if (user.verified) throw new NotAcceptableException('이미 가입이 완료된 유저입니다.');
 
-    await this.prisma.user.update({
+    await this.prismaService.user.update({
       where: { email: user.email },
       data: { verified: true },
     });
@@ -88,7 +88,7 @@ export class UsersService {
 
   async validateUser(email: string, password: string) {
     try {
-      const user = await this.prisma.user.findUnique({ where: { email } });
+      const user = await this.prismaService.user.findUnique({ where: { email } });
       const isPasswordValid = await bcrypt.compare(password, user.password);
       
       if (!user || !isPasswordValid) throw new UnauthorizedException('아이디나 비밀번호가 틀렸습니다.');       
@@ -101,7 +101,7 @@ export class UsersService {
   }
 
   async getUserInfo(userId: string): Promise<UserInfo> {
-    const user = await this.prisma.user.findFirst({ where: { id: userId } });
+    const user = await this.prismaService.user.findFirst({ where: { id: userId } });
     if (!user) throw new NotFoundException('유저가 존재하지 않습니다.');
 
     return {
