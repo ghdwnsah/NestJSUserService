@@ -2,7 +2,7 @@ import * as nodemailer from 'nodemailer';
 import Mail from 'nodemailer/lib/mailer';
 
 import { Inject, Injectable } from '@nestjs/common';
-import emailConfig from 'src/config/emailConfig';
+import emailConfig from '@/core/common/config/emailConfig';
 import { ConfigType } from '@nestjs/config';
 
 interface EmailOptions {
@@ -28,6 +28,7 @@ export class EmailService {
     }
 
     async sendMemberJoinVerification(emailAddress: string, signupVerifyToken: string) {
+        console.log('sendMemberJoinVerification()');
         const baseUrl = 'http://localhost:3000';
 
         const url = `${baseUrl}/users/email-verify?signupVerifyToken=${signupVerifyToken}`;

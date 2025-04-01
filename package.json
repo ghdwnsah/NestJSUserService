@@ -20,7 +20,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "generate-schema": "cat src/*/*.prisma > temp_schema.prisma && mv temp_schema.prisma prisma/schema.prisma",
+    "generate-schema": "cat src/*/*/*/*.prisma > temp_schema.prisma && mv temp_schema.prisma prisma/schema.prisma",
     "migrate": "node migrate.js",
     "dbpush": "npx prisma db push"
   },

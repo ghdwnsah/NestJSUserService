@@ -4,15 +4,15 @@ import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
 import { EmailModule } from './email/email.module';
 import { ConfigModule } from '@nestjs/config';
-import emailConfig from './config/emailConfig';
-import { validationSchema } from './config/validationSchema'
-import { AuthModule } from './auth/auth.module';
-import authConfig from './config/authConfig';
+import emailConfig from './core/common/config/emailConfig';
+import { validationSchema } from './core/common/config/validationSchema'
+import { AuthModule } from './core/common/auth/auth.module';
+import authConfig from './core/common/config/authConfig';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      envFilePath: [`${__dirname}/config/env/.${process.env.NODE_ENV}.env`],
+      envFilePath: [`${__dirname}/core/common/config/env/.${process.env.NODE_ENV}.env`],
       load: [emailConfig],
       isGlobal: true,
       validationSchema,
