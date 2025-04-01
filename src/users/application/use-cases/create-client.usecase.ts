@@ -11,7 +11,8 @@ export class CreateClientUseCase {
 
   async execute(createClientDto: CreateClientDto) {
     const clientDbDto: CreateClientDbDto = {
-      name: createClientDto.name
+      name: createClientDto.name,
+      isPaid: false,
     }
 
     return await this.clientRepository.createClient(clientDbDto);

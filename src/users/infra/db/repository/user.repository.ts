@@ -18,6 +18,10 @@ export class UserRepository {
     return await this.prisma.user.update({ where: { id }, data });
   }
 
+  async updateUserVerifiedTrue(email: string) {
+    return await this.prisma.user.update({ where: { email }, data: { verified: true } });
+  }
+
   async deleteUser(id: string) {
     return await this.prisma.user.delete({ where: { id } });
   }
@@ -28,5 +32,9 @@ export class UserRepository {
 
   async findUserByEmail(email: string) {
     return await this.prisma.user.findFirst({ where: {email} });
+  }
+
+  async findUserBySignupVerifyToken(signupVerifyToken: string) {
+    return await this.prisma.user.findFirst({ where: {signupVerifyToken} });
   }
 }

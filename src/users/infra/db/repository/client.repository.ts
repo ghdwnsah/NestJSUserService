@@ -25,4 +25,11 @@ export class ClientRepository {
   async getAllClients() {
     return await this.prisma.client.findMany();
   }
+
+  async isClientPaid(id: string): Promise<boolean> {
+    const client = await this.prisma.client.findUnique({
+      where: { id },
+    });
+    return client?.isPaid ?? false;
+  }
 }

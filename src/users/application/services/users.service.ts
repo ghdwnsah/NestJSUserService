@@ -14,16 +14,19 @@ import { userInfo } from 'os';
 import { UserLoginDto } from '../../interface/dto/login-user.dto';
 import { CreateUserUseCase } from '../use-cases/create-user.usecase';
 import { Role } from '@/core/common/roles/role.enum';
+import { VerifyUserUseCase } from '../use-cases/verifyemail.usecase';
 
 @Injectable()
 export class UsersService {
   constructor(
     private authService: AuthService,
     private prismaService: PrismaService,
-    private CreateUserUseCase: CreateUserUseCase,
+    private createUserUseCase: CreateUserUseCase,
+    private verifyUserUseCase: VerifyUserUseCase,
   ) {}
 
 
+  // TODO: 슈퍼 어드민 가입 절차 기능 완료되면 없애야함
   async testSuperAdminCreateUser(name: string, email: string, password: string) {
     console.log('testSuperAdminCreateUser()');
     let createUserDto: CreateUserDto = {
@@ -32,25 +35,12 @@ export class UsersService {
       password,
     }
 
-    return await this.CreateUserUseCase.execute(createUserDto, Role.SuperAdmin);
+    return await this.createUserUseCase.execute(createUserDto, Role.SuperAdmin);
   }
 
   async verifyEmail(signupVerifyToken: string, ip: string): Promise<object> {
-    const user = await this.prismaService.user.findFirst({ where: { signupVerifyToken } });
-    if (!user) throw new NotFoundException('유저가 존재하지 않습니다.');
-    if (user.verified) throw new NotAcceptableException('이미 가입이 완료된 유저입니다.');
-
-    await this.prismaService.user.update({
-      where: { email: user.email },
-      data: { verified: true },
-    });
-  
-    return this.authService.login({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-    }, ip);
-  }// TODO: 테스트
+    return await this.verifyUserUseCase.execute(signupVerifyToken, ip);
+  }
 
 
 

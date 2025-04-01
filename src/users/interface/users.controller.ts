@@ -29,8 +29,8 @@ export class UsersController {
     await this.usersService.testSuperAdminCreateUser(name, email, password);
   }
 
-  
-
+  // 이메일 인증은 모든 권한에게 허용
+  @Roles(Role.SuperAdmin, Role.ClientAdmin, Role.ClientUser)
   @Post('/email-verify')
   async verifyEmail(@Query() dto: VerifyEmailDto, @Ip() ip: string): Promise<object> {
     const { signupVerifyToken } = dto;
