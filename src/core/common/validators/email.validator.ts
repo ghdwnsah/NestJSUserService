@@ -1,4 +1,4 @@
-import { UserRepository } from '@/users/infra/db/repository/user.repository';
+import { UserRepository } from "@/core/infra/db/repo/user.repository.impl";
 import { BadRequestException } from '@nestjs/common';
 
 export async function checkEmailExists(

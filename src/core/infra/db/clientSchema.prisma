@@ -1,0 +1,7 @@
+model Client {
+  id          String @id @default(uuid())
+  name        String
+  clientCode  String  @unique
+  isPaid      Boolean @default(false)  // 결제 여부 필드 추가
+  users       User[]  @relation("Clients")
+}

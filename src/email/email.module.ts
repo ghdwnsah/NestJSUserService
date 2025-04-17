@@ -1,12 +1,15 @@
 import { Module } from '@nestjs/common';
-import { EmailService } from './email.service';
+import { EmailController } from './interface/controllers/email.controller';
+// import { VerifyEmailUseCase } from './application/usecase/verifyEmail.usecase';
 
 @Module({
+    controllers: [
+        EmailController,
+    ],
     providers: [
-        EmailService,
     ],
     exports: [
-        EmailService,
+
     ],
 })
 export class EmailModule {}

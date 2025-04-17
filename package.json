@@ -20,7 +20,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "generate-schema": "cat src/*/*/*/*.prisma > temp_schema.prisma && mv temp_schema.prisma prisma/schema.prisma",
+    "generate-schema": "find src -name '*.prisma' -exec cat {} + > temp_schema.prisma && mv temp_schema.prisma prisma/schema.prisma",
     "migrate": "node migrate.js",
     "dbpush": "npx prisma db push"
   },
@@ -30,6 +30,7 @@
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^4.0.1",
     "@nestjs/core": "^11.0.0",
+    "@nestjs/cqrs": "^11.0.3",
     "@nestjs/jwt": "^11.0.0",
     "@nestjs/mapped-types": "*",
     "@nestjs/passport": "^11.0.5",

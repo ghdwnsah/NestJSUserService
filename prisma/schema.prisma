@@ -1,8 +1,4 @@
-model IpDenylist {
-  ip     String @id
-  reason String
-  createdAt DateTime @default(now())
-}// This is your Prisma schema file,
+// This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
@@ -16,10 +12,15 @@ datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }model Client {
-  id     String @id @default(uuid())
-  name   String
-  isPaid Boolean @default(false)  // 결제 여부 필드 추가
-  users  User[]
+  id          String @id @default(uuid())
+  name        String
+  clientCode  String  @unique
+  isPaid      Boolean @default(false)  // 결제 여부 필드 추가
+  users       User[]  @relation("Clients")
+}model IpDenylist {
+  ip     String @id
+  reason String
+  createdAt DateTime @default(now())
 }model RefreshToken {
   id        String   @id @default(uuid())
   token     String   @unique
@@ -36,15 +37,17 @@ datasource db {
 }
 
 model User {
-  id                String @id
-  name              String @db.VarChar(30)
-  email             String @unique @db.VarChar(60)
-  password          String @db.VarChar(60)
-  signupVerifyToken String @db.VarChar(60)
-  verified          Boolean @default(false)
-  createdAt         DateTime @default(now())
-  role              Role
-  refreshTokens     RefreshToken[]
-  clientId          String?     // FK
-  client            Client? @relation(fields: [clientId], references: [id])
+  id                    String @id
+  name                  String @db.VarChar(30)
+  email                 String @unique @db.VarChar(60)
+  password              String @db.VarChar(60)
+  signupVerifyToken     String @db.VarChar(60)
+  verified              Boolean @default(false)
+  createdAt             DateTime @default(now())
+  role                  Role
+  refreshTokens         RefreshToken[]
+  clientId              String?     // FK
+  resetPasswordToken    String?
+  resetPasswordExpires  DateTime?
+  client                Client?  @relation(fields: [clientId], references: [id], name: "Clients")
 }
