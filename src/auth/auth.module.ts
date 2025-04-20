@@ -12,6 +12,7 @@ import { AuthController } from './interface/auth.controller';
 import { CqrsModule } from '@nestjs/cqrs';
 import { VerifyUserEmailHandler } from './application/command/verify-userEmail.handler';
 import { LoginUserHandler } from './application/command/login-user.handler';
+import { RefreshTokenRepository } from '@/core/infra/db/repo/refreshtoken.repository';
 
 const CommandHandlers = [
     LoginUserHandler,
@@ -44,6 +45,7 @@ const CommandHandlers = [
         AuthService, 
         JwtStrategy,
         { provide: 'UserRepository', useClass: UserRepository },
+        { provide: 'RefreshTokenRepository', useClass: RefreshTokenRepository },
         ...CommandHandlers,
     ],
     exports: [
