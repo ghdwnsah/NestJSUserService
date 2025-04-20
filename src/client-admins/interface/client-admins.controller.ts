@@ -8,8 +8,11 @@ import { CreateClientAdminUserResponse } from "./reponse/createClientAdminUser.r
 import { ClientAdminsService } from "../application/client-admins.service";
 import { JwtAuthGuard } from "@/auth/jwt-auth.guard";
 import { UserLoginDto } from "@/core/interface/dto/login-user.dto";
-import { CommandBus } from "@nestjs/cqrs";
+import { CommandBus, QueryBus } from "@nestjs/cqrs";
 import { CreateClientAdminCommand } from "../application/command/create-clientadmin.command";
+import { UserInfo } from "@/core/interface/userInfo";
+import { GetUserInfoQuery } from "../application/query/get-user-info.query";
+import { User } from "@/auth/user.decorator";
 
 // TODO : 하위 관리자 컨트롤러
 @Roles(Role.ClientAdmin)
@@ -18,6 +21,7 @@ export class ClientAdminsController {
     constructor(
         private readonly clientAdminsService: ClientAdminsService,
         private commandBus: CommandBus,
+        private queryBus: QueryBus,
     ) {}
 
     // 가입은 모든 사람에게 허용
@@ -33,23 +37,22 @@ export class ClientAdminsController {
             clientName: createClientUserDto.clientName,
         };
 
-        // return await this.clientAdminsService.createClientAdmin(
-        //     clientAdminInfo.name, clientAdminInfo.email, clientAdminInfo.password,
-        //     clientAdminInfo.clientName);
-
         const command = new CreateClientAdminCommand(clientAdminInfo.name, clientAdminInfo.email, clientAdminInfo.password, clientAdminInfo.clientName);
         return this.commandBus.execute(command);
     }
 
-    // @Roles(Role.ClientAdmin)
-    // @Post()
-    // @Post('/login')
-    // async login(@Body() dto: UserLoginDto, @Ip() ip: string): Promise<object> {
-    //     const { email, password } = dto;
+    @UseGuards(JwtAuthGuard)
+    @Roles(Role.ClientAdmin)
+    @Get()
+    async findOne(
+        @Param('id') userId: string,
+        @User('clientId') clientId: string,
+        @Res() res
+    ): Promise<UserInfo> {
+        const getUserInfoQuery = new GetUserInfoQuery(userId, clientId);
 
-    //     const user = await this.usersService.validateUser(email, password);
-    //     return await this.usersService.login(email, password, ip);
-    // }
+		return this.queryBus.execute(getUserInfoQuery);
+    }
 
     // @Get()
     // async findAll(

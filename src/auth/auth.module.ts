@@ -9,6 +9,14 @@ import { PrismaModule } from '@/core/infra/db/prisma.module';
 import { VerifyAndLoginUseCase } from './verifyAndLogin.usecase';
 import { UserRepository } from '@/core/infra/db/repo/user.repository.impl';
 import { AuthController } from './interface/auth.controller';
+import { CqrsModule } from '@nestjs/cqrs';
+import { VerifyUserEmailHandler } from './application/command/verify-userEmail.handler';
+import { LoginUserHandler } from './application/command/login-user.handler';
+
+const CommandHandlers = [
+    LoginUserHandler,
+    VerifyUserEmailHandler,
+  ];
 
 @Module({
     imports: [
@@ -27,15 +35,16 @@ import { AuthController } from './interface/auth.controller';
             }),
         }),
         PrismaModule,
+        CqrsModule,
     ],
     controllers: [
         AuthController
     ],
     providers: [
         AuthService, 
-        JwtStrategy, 
-        VerifyAndLoginUseCase,
-        { provide: 'UserRepository', useClass: UserRepository }
+        JwtStrategy,
+        { provide: 'UserRepository', useClass: UserRepository },
+        ...CommandHandlers,
     ],
     exports: [
         AuthService, 

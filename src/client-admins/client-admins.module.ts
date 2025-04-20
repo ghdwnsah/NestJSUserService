@@ -1,7 +1,6 @@
 import { Module } from "@nestjs/common";
 import { ClientAdminsController } from "./interface/client-admins.controller";
 import { ClientAdminsService } from "./application/client-admins.service";
-import { ClientAdminsUsecaseModule } from "./application/usecase/clientAdminsUsecase.module";
 import { PrismaModule } from "@/core/infra/db/prisma.module";
 import { ClientAdminsRepository } from "./infra/db/client-admins.repository";
 import { UserRepository } from "@/core/infra/db/repo/user.repository.impl";
@@ -13,7 +12,6 @@ import { UserEventsHandler } from "@/core/application/event/users-event.handler"
 @Module({
     imports: [
         // inside
-        ClientAdminsUsecaseModule,
 
         // outside
         CqrsModule,
@@ -32,7 +30,7 @@ import { UserEventsHandler } from "@/core/application/event/users-event.handler"
         NodemailerEmailService,
 
         // core
-        UserRepository,
+        {provide: 'UserRepository', useClass: UserRepository},
         UserEventsHandler,
     ],
     exports: []

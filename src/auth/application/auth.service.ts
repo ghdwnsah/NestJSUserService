@@ -9,6 +9,7 @@ import { PrismaService } from '@/core/infra/db/prisma.service';
 
 import { v4 as uuidv4 } from 'uuid';
 import { addMinutes } from 'date-fns';
+import { LoginResponse } from '@/email/interface/response/login.response';
 
 @Injectable()
 export class AuthService {
@@ -18,7 +19,8 @@ export class AuthService {
         private readonly prismaService: PrismaService
     ) {}
 
-    login(user: UserInfo, ip: string) {
+    async login(user: UserInfo, ip: string): Promise<LoginResponse> {
+        await this.invalidatePreviousRefreshTokens(user.id);
         return this.generateTokens(user, ip);
     }
 
@@ -34,6 +36,18 @@ export class AuthService {
         } catch (e) {
             throw new UnauthorizedException();
         }
+    }
+
+    async invalidatePreviousRefreshTokens(userId: string) {
+      await this.prismaService.refreshToken.updateMany({
+        where: {
+          userId,
+          isValid: true,
+        },
+        data: {
+          isValid: false,
+        },
+      });
     }
 
     async generateTokens(user: UserInfo, ip: string) {

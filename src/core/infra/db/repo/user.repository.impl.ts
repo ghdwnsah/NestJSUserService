@@ -35,8 +35,12 @@ export class UserRepository implements IUserRepositoryForEmail {
     });
   }
 
-  async getUserById(id: string) {
+  async getUserById(id: string): Promise<User> {
     return await this.prisma.user.findUnique({ where: { id } });
+  }
+
+  async getUserByEmail(email: string): Promise<User> {
+    return await this.prisma.user.findUnique({ where: { email } });
   }
 
   async updateUser(id: string, data: any) {
@@ -55,6 +59,14 @@ export class UserRepository implements IUserRepositoryForEmail {
 
   async getAllUsers(clientId: string) {
     return await this.prisma.user.findMany({ where: { clientId } });
+  }
+
+  async findOne(id: string): Promise<User> {
+    return await this.prisma.user.findFirst({ where: { id } });
+  }
+
+  async findOneForClientAdmin(id: string, clientId: string): Promise<User> {
+    return await this.prisma.user.findFirst({ where: { id, clientId } });
   }
 
   async findUserByEmail(email: string): Promise<User> {

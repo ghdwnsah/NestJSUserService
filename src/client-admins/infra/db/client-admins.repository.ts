@@ -4,17 +4,17 @@ import { CreateClientDbDto } from "@/client-admins/interface/dto/create-client-d
 import { CreateClientAdminUserResponse } from "@/client-admins/interface/reponse/createClientAdminUser.response";
 // import { IClientRepoForClientUsers } from "@/client-users/application/port/iClientRepoForClientUsers.service";
 import { PrismaService } from "@/core/infra/db/prisma.service";
-import { UserRepository } from "@/core/infra/db/repo/user.repository.impl";
 import { CreateUserDbDto } from "@/core/interface/dto/create-user-db.dto";
 import { Inject, Injectable } from "@nestjs/common";
 import { Client, User } from "@prisma/client";
+import { iUserRepositoryForClientAdmins } from "../adapter/iUser.repository";
 
 @Injectable()
 export class ClientAdminsRepository {
     constructor(
         private readonly prismaService: PrismaService,
-        private readonly userRepository: UserRepository,
-        // @Inject('UserRepository') private readonly userRepository: iUserRepositoryForClientAdmins,
+
+        @Inject('UserRepository') private readonly userRepository: iUserRepositoryForClientAdmins,
     ) {}
 
     async createClientAdminUser(createUserDbDto: CreateUserDbDto, clientDbDto: CreateClientDbDto): Promise<CreateClientAdminUserResponse> {

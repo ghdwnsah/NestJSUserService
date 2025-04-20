@@ -3,18 +3,33 @@ import { VerifyAndLoginUseCase } from '../verifyAndLogin.usecase';
 import { Role } from '@/core/common/roles/role.enum';
 import { Roles } from '@/core/common/roles/roles.decorator';
 import { VerifyEmailDto } from '@/email/interface/dto/verifyEmail.dto';
+import { UserLoginDto } from '@/core/interface/dto/login-user.dto';
+import { LoginUserCommand } from '../application/command/login-user.command';
+import { CommandBus } from '@nestjs/cqrs';
+import { VerifyUserEmailCommand } from '../application/command/verify-userEmail.command';
 
 
-@Controller('/auth')
+@Controller('/')
 export class AuthController {
-  constructor(private readonly verifyAndLogin: VerifyAndLoginUseCase) {}
+  constructor(
+    private readonly commandBus: CommandBus,
+  ) {}
 
-    // 이메일 인증은 모든 권한자에게 허용
-    @Roles(Role.SuperAdmin, Role.ClientAdmin, Role.ClientUser)
-    @Post('/email/verify')
+    @Roles()
+    @Post('/users/email/auth/verify')
     async verifyEmail(@Query() dto: VerifyEmailDto, @Ip() ip: string) {
         const { signupVerifyToken } = dto;
 
-        return await this.verifyAndLogin.execute(signupVerifyToken, ip);
+        const command = new VerifyUserEmailCommand(signupVerifyToken, ip);
+        return this.commandBus.execute(command);
+    }
+
+    @Roles()
+    @Post('/users/auth/login')
+    async login(@Body() dto: UserLoginDto, @Ip() ip: string) {
+      const { email, password } = dto;
+      
+      const command = new LoginUserCommand(email, password, ip);
+      return this.commandBus.execute(command);
     }
 }

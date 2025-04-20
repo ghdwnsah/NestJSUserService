@@ -13,7 +13,7 @@ import { CreateClientDbDto } from '@/client-admins/interface/dto/create-client-d
 import { NodemailerEmailService } from '@/email/infra/nodemailer-email.service';
 import { ClientAdminsRepository } from '@/client-admins/infra/db/client-admins.repository';
 import { UserCreatedEvent } from '@/core/domain/userCreate-event';
-import { TestEvent } from '@/core/domain/test-event';
+
 
 @Injectable()
 @CommandHandler(CreateClientAdminCommand)
@@ -37,25 +37,24 @@ export class CreateUserHandler implements ICommandHandler<CreateClientAdminComma
         };
 
         const createUserDbDto: CreateUserDbDto = {
-              id: ulid(),
-              name: createUserDto.name,
-              email: createUserDto.email,
-              password: await hashPassword(createUserDto.password),
-              signupVerifyToken: await signupVerifyTokenCreate(),
-              role: Role.ClientAdmin,
-              verified: false,
-            }
-            const createClientDbDto: CreateClientDbDto = {
-              name: createClientDto.name,
-              isPaid: false,
-              clientCode: this.generateClientCode(),
-            }
+            id: ulid(),
+            name: createUserDto.name,
+            email: createUserDto.email,
+            password: await hashPassword(createUserDto.password),
+            signupVerifyToken: await signupVerifyTokenCreate(),
+            role: Role.ClientAdmin,
+            verified: false,
+        }
+        const createClientDbDto: CreateClientDbDto = {
+            name: createClientDto.name,
+            isPaid: false,
+            clientCode: this.generateClientCode(),
+        }
 
-            this.eventBus.publish(new UserCreatedEvent(createUserDbDto.email, createUserDbDto.signupVerifyToken));
-	        this.eventBus.publish(new TestEvent());
-		
-            // this.sendMemberJoinEmail(createUserDbDto.email, createUserDbDto.signupVerifyToken);
-            return await this.clientAdminsRepository.createClientAdminUser(createUserDbDto, createClientDbDto);
+        this.eventBus.publish(new UserCreatedEvent(createUserDbDto.email, createUserDbDto.signupVerifyToken));
+    
+        // this.sendMemberJoinEmail(createUserDbDto.email, createUserDbDto.signupVerifyToken);
+        return await this.clientAdminsRepository.createClientAdminUser(createUserDbDto, createClientDbDto);
 	}
 
     private generateClientCode(): string {
