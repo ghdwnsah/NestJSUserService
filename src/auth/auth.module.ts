@@ -13,6 +13,8 @@ import { CqrsModule } from '@nestjs/cqrs';
 import { VerifyUserEmailHandler } from './application/command/verify-userEmail.handler';
 import { LoginUserHandler } from './application/command/login-user.handler';
 import { RefreshTokenRepository } from '@/core/infra/db/repo/refreshtoken.repository';
+import { UpdateResetPasswordRequestHandler } from './application/command/update-resetPasswordRequest.handler';
+import { UpdateResetPasswordConfirmHandler } from './application/command/update-resetPasswordconfirm.handler';
 
 const CommandHandlers = [
     LoginUserHandler,
@@ -44,6 +46,8 @@ const CommandHandlers = [
     providers: [
         AuthService, 
         JwtStrategy,
+        UpdateResetPasswordRequestHandler,
+        UpdateResetPasswordConfirmHandler,
         { provide: 'UserRepository', useClass: UserRepository },
         { provide: 'RefreshTokenRepository', useClass: RefreshTokenRepository },
         ...CommandHandlers,

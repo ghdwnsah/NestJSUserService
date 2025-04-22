@@ -18,12 +18,14 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   }
 
   async validate(payload: any) {
+    console.log('JwtStrategy class validate()');
     const user = await this.prisma.user.findFirst({
       where: { id: payload.sub },
       include: {
         client: true,
       },
     });
+    console.log('JwtStrategy class user :', user);
     return user;
   }
 }

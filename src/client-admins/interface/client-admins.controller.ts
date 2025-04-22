@@ -5,21 +5,20 @@ import { RolesGuard } from "@/core/common/roles/roles.guard";
 import { Body, Controller, DefaultValuePipe, Delete, Get, Inject, Ip, Param, ParseIntPipe, Patch, Post, Query, Res, UseGuards } from "@nestjs/common";
 import { CreateClientAdminDto } from "./dto/create-client-admin.dto";
 import { CreateClientAdminUserResponse } from "./reponse/createClientAdminUser.response";
-import { ClientAdminsService } from "../application/client-admins.service";
 import { JwtAuthGuard } from "@/auth/jwt-auth.guard";
 import { UserLoginDto } from "@/core/interface/dto/login-user.dto";
 import { CommandBus, QueryBus } from "@nestjs/cqrs";
 import { CreateClientAdminCommand } from "../application/command/create-clientadmin.command";
 import { UserInfo } from "@/core/interface/userInfo";
-import { GetUserInfoQuery } from "../application/query/get-user-info.query";
+import { GetClientUserInfoQuery } from "../application/query/get-clientUserInfo.query";
 import { User } from "@/auth/user.decorator";
+import { UpdateResetPasswordRequestCommand } from "../../auth/application/command/update-resetPasswordRequest.command";
 
 // TODO : 하위 관리자 컨트롤러
 @Roles(Role.ClientAdmin)
 @Controller('/users/client')
 export class ClientAdminsController {
     constructor(
-        private readonly clientAdminsService: ClientAdminsService,
         private commandBus: CommandBus,
         private queryBus: QueryBus,
     ) {}
@@ -46,12 +45,9 @@ export class ClientAdminsController {
     @Get()
     async findOne(
         @Param('id') userId: string,
-        @User('clientId') clientId: string,
-        @Res() res
     ): Promise<UserInfo> {
-        const getUserInfoQuery = new GetUserInfoQuery(userId, clientId);
-
-		return this.queryBus.execute(getUserInfoQuery);
+        const query = new GetClientUserInfoQuery(userId);
+		return this.queryBus.execute(query);
     }
 
     // @Get()
@@ -78,10 +74,5 @@ export class ClientAdminsController {
     //     @Body() updateData: any
     // ): Promise<User> {
     //     return await this.clientAdminsService.updateUser(id, updateData);
-    // }
-
-    // @Patch(':id/reset-password')
-    // async resetPassword(@Param('id') id: string): Promise<{ message: string }> {
-    //     return await this.clientAdminsService.resetPassword(id);
     // }
 }

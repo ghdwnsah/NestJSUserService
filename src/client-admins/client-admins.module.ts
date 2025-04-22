@@ -1,6 +1,5 @@
 import { Module } from "@nestjs/common";
 import { ClientAdminsController } from "./interface/client-admins.controller";
-import { ClientAdminsService } from "./application/client-admins.service";
 import { PrismaModule } from "@/core/infra/db/prisma.module";
 import { ClientAdminsRepository } from "./infra/db/client-admins.repository";
 import { UserRepository } from "@/core/infra/db/repo/user.repository.impl";
@@ -8,6 +7,7 @@ import { CqrsModule } from "@nestjs/cqrs";
 import { CreateUserHandler } from "./application/command/create-clientadmin.handler";
 import { NodemailerEmailService } from "@/email/infra/nodemailer-email.service";
 import { UserEventsHandler } from "@/core/application/event/users-event.handler";
+import { GetClientUserInfoHandler } from "./application/query/get-clientUserInfo.handler";
 
 @Module({
     imports: [
@@ -23,8 +23,8 @@ import { UserEventsHandler } from "@/core/application/event/users-event.handler"
     providers: [
         // inside
         ClientAdminsRepository,
-        ClientAdminsService,
         CreateUserHandler,
+        GetClientUserInfoHandler,
 
         // outside
         NodemailerEmailService,

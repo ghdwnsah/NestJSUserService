@@ -42,22 +42,14 @@ export class LoginUserHandler implements ICommandHandler<LoginUserCommand> {
         }
 
         await this.refreshTokenRepository.updateInvalidatePreviousRefreshTokens(userInfo.id);
+        return this.authService.login({
+            id: user.id,
+            name: user.name,
+            email: user.email,
+        }, ip);
         
-        return await this.generateTokens(userInfo, ip);
       } catch (e) {
         throw new UnauthorizedException('아이디나 비밀번호가 틀렸습니다.');
       }
-    }
-
-    async generateTokens(user: UserInfo, ip: string) {
-      const payload = { ...user };
-      const accessToken = this.jwtService.sign(payload);
-  
-      const refreshToken = uuidv4();
-      const expiresAt = addMinutes(new Date(), 60 * 24 * 14); // 14일
-  
-      await this.refreshTokenRepository.createRefreshToken(refreshToken, user.id, expiresAt, ip);
-  
-      return { accessToken, refreshToken };
     }
 }

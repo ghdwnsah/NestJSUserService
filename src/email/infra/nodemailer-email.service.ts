@@ -43,6 +43,23 @@ export class NodemailerEmailService {
     //     }
     // }
 
+    async sendResetPasswordEmail(email: string, url: string) {
+        console.log();
+        const mailOptions: EmailOptions = {
+          to: email,
+          subject: '🔐 비밀번호 재설정 안내',
+          html:  `
+          아래 버튼을 클릭하면 비밀번호를 재설정할 수 있습니다.<br/>
+          <a href="${url}" style="display: inline-block; padding: 10px 20px; background-color: #4f46e5; color: white; text-decoration: none; border-radius: 6px;">
+            비밀번호 재설정
+          </a>
+          <p>해당 링크는 30분 후 만료됩니다.</p>
+        `,
+        };
+      
+        return await this.transporter.sendMail(mailOptions);
+      }
+
     async sendMemberJoinVerification(emailAddress: string, signupVerifyToken: string) {
         console.log('sendMemberJoinVerification()');
         const baseUrl = 'http://localhost:3000';
