@@ -1,4 +1,4 @@
-import { Module } from "@nestjs/common";
+import { Logger, Module } from "@nestjs/common";
 import { ClientAdminsController } from "./interface/client-admins.controller";
 import { PrismaModule } from "@/core/infra/db/prisma.module";
 import { ClientAdminsRepository } from "./infra/db/client-admins.repository";
@@ -8,6 +8,7 @@ import { CreateUserHandler } from "./application/command/create-clientadmin.hand
 import { NodemailerEmailService } from "@/email/infra/nodemailer-email.service";
 import { UserEventsHandler } from "@/core/application/event/users-event.handler";
 import { GetClientUserInfoHandler } from "./application/query/get-clientUserInfo.handler";
+
 
 @Module({
     imports: [
@@ -28,6 +29,7 @@ import { GetClientUserInfoHandler } from "./application/query/get-clientUserInfo
 
         // outside
         NodemailerEmailService,
+        Logger,
 
         // core
         {provide: 'UserRepository', useClass: UserRepository},

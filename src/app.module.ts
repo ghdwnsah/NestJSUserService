@@ -8,6 +8,11 @@ import { validationSchema } from './core/common/config/validationSchema'
 import { AuthModule } from './auth/auth.module';
 import authConfig from './core/common/config/authConfig';
 import { ClientAdminsModule } from './client-admins/client-admins.module';
+import * as winston from 'winston';
+import {
+utilities as nestWinstonModuleUtilities,
+WinstonModule,
+} from 'nest-winston';
 
 @Module({
   imports: [
@@ -21,6 +26,18 @@ import { ClientAdminsModule } from './client-admins/client-admins.module';
     EmailModule, 
     AuthModule,
     ClientAdminsModule,
+    WinstonModule.forRoot({
+	    transports: [
+	      new winston.transports.Console({
+	        // level: process.env.NODE_ENV === 'production' ? 'info' : 'silly',
+	        level: 'silly',
+	        format: winston.format.combine(
+	          winston.format.timestamp(),
+	          nestWinstonModuleUtilities.format.nestLike('MyAppUserService', { prettyPrint: true }),
+	        ),
+	      })
+	    ]
+	  }),
   ],
   controllers: [AppController],
   providers: [AppService],
