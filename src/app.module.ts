@@ -1,8 +1,8 @@
-import { Module } from '@nestjs/common';
+import { Logger, Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { EmailModule } from './email/email.module';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import emailConfig from './core/common/config/emailConfig';
 import { validationSchema } from './core/common/config/validationSchema'
 import { AuthModule } from './auth/auth.module';
@@ -13,16 +13,26 @@ import {
 utilities as nestWinstonModuleUtilities,
 WinstonModule,
 } from 'nest-winston';
+import { CacheModule } from '@nestjs/cache-manager';
+// import * as redisStore from 'cache-manager-redis-store';
+// import {redisStore} from 'cache-manager-redis-store';
+// import * as redisStore from 'cache-manager-ioredis';
+import {redisStore} from 'cache-manager-ioredis-yet';
+import { RedisClientOptions } from 'redis';
+import { APP_FILTER } from '@nestjs/core';
+import { HttpExceptionFilter } from './shared/filter/httpException.filter';
+import KeyvRedis, { createKeyv } from '@keyv/redis';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
+      isGlobal: true,
       envFilePath: [`${__dirname}/core/common/config/env/.${process.env.NODE_ENV}.env`],
       load: [emailConfig],
-      isGlobal: true,
+      cache: true,
       validationSchema,
     }),
-    ConfigModule.forFeature(authConfig), // 이게 있어야 Nest가 CONFIGURATION(auth)를 알 수 있음 
+    // ConfigModule.forFeature(authConfig), // 이게 있어야 Nest가 CONFIGURATION(auth)를 알 수 있음 
     EmailModule, 
     AuthModule,
     ClientAdminsModule,
@@ -38,8 +48,41 @@ WinstonModule,
 	      })
 	    ]
 	  }),
+    CacheModule.registerAsync({ 
+      isGlobal: true,
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (config: ConfigService) => ({
+        stores: [createKeyv(`redis://${config.get<string>('REDIS_HOST') || 'localhost'}:${config.get<string>('REDIS_PORT') || 6379}`)],
+        ttl: parseInt(config.get<string>('CACHE_TTL'), 10) || 3600000,
+      })
+    })
+    // CacheModule.register({ 
+    //   isGlobal: true,
+    //   stores: [ createKeyv('redis://localhost:6379') ],
+    // })
+
+    // CacheModule.registerAsync({
+    //   isGlobal: true,
+    //   imports: [ConfigModule], 
+    //   inject: [ConfigService], 
+    //   useFactory: async (config: ConfigService) => {{
+    //     stores: [createKeyv('redis://localhost:6379'),
+    //     ttl: parseInt(config.get<string>('CACHE_TTL'), 10) || 3600000,
+      
+    //   }
+        
+    //   },
+    // }),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+			provide: APP_FILTER,
+			useClass: HttpExceptionFilter,
+		},
+    Logger,
+  ],
 })
 export class AppModule {}
