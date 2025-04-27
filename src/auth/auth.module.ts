@@ -16,6 +16,7 @@ import { RefreshTokenRepository } from '@/core/infra/db/repo/refreshtoken.reposi
 import { UpdateResetPasswordRequestHandler } from './application/command/update-resetPasswordRequest.handler';
 import { UpdateResetPasswordConfirmHandler } from './application/command/update-resetPasswordconfirm.handler';
 import { CustomCacheService } from '@/shared/cache/cache.service';
+import { UpdateRefreshAccessTokenHandler } from './application/command/update-refreshAccessToken.handler';
 
 
 const CommandHandlers = [
@@ -23,6 +24,7 @@ const CommandHandlers = [
     VerifyUserEmailHandler,
     UpdateResetPasswordRequestHandler,
     UpdateResetPasswordConfirmHandler,
+    UpdateRefreshAccessTokenHandler,
   ];
 
 @Module({
@@ -35,7 +37,7 @@ const CommandHandlers = [
             useFactory: async (configService: ConfigService) => ({
                 secret: configService.get<string>('JWT_SECRET'),
                 signOptions: { 
-                    expiresIn: '1h',
+                    expiresIn: parseInt(configService.get<string>('ACCESS_TOKEN_EXPIRE')),
                     issuer: 'hong.com',
                     audience: 'hong.com', 
                 },
@@ -51,7 +53,6 @@ const CommandHandlers = [
         AuthService, 
         JwtStrategy,
         CustomCacheService,
-        { provide: 'UserRepository', useClass: UserRepository },
         { provide: 'UserRepository', useClass: UserRepository },
         { provide: 'RefreshTokenRepository', useClass: RefreshTokenRepository },
         ...CommandHandlers,

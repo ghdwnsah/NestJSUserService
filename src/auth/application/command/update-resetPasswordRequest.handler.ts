@@ -7,12 +7,13 @@ import { addMinutes } from "date-fns";
 import { ClientAdminsRepository } from "@/client-admins/infra/db/client-admins.repository";
 import { ResetPasswordEvent } from "@/core/domain/resetPassword-event";
 import { iUserRepositoryForClientAdmins } from "@/client-admins/infra/adapter/iUser.repository";
+import { IUserRepositoryForAuth } from "@/auth/infra/adaper/iUser.repository";
 
 @Injectable()
 @CommandHandler(UpdateResetPasswordRequestCommand)
 export class UpdateResetPasswordRequestHandler implements ICommandHandler<UpdateResetPasswordRequestCommand> {
     constructor (
-        @Inject('UserRepository') private readonly userRepository: iUserRepositoryForClientAdmins,
+        @Inject('UserRepository') private readonly userRepository: IUserRepositoryForAuth,
         private readonly eventBus: EventBus,
     ) {}
 

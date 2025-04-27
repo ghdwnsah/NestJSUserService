@@ -15,6 +15,8 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ApiDefaultResponses } from '@/shared/swagger/api-default-responses.decorator';
 import { ResetPasswordRequestDto } from './dto/resetPasswordRequest.dto';
 import { ResetPasswordConfirmDto } from './dto/resetPasswordConfirm.dto';
+import { UpdateRefreshAccessTokenCommand } from '../application/command/update-refreshAccessToken.command';
+import { RefreshAccessTokenDto } from '@/client-admins/interface/dto/update-refreshAccessToken.dto';
 
 @ApiTags('Auth')
 @Controller('/')
@@ -41,6 +43,17 @@ export class AuthController {
       const { email, password } = dto;
       
       const command = new LoginUserCommand(email, password, ip);
+      return this.commandBus.execute(command);
+    }
+
+    @ApiOperation({ summary: '유저 액세스 토큰 재발급', description: '리프레쉬 토큰을 통한 액세스 토큰 재발급' })
+    @ApiDefaultResponses()
+    @Roles()
+    @Post('/users/auth/refresh')
+    async refreshAccessToken(@Body() refreshTokenDto: RefreshAccessTokenDto, @Ip() ip: string) {
+      const { refreshToken, id } = refreshTokenDto;
+      
+      const command = new UpdateRefreshAccessTokenCommand(id, refreshToken);
       return this.commandBus.execute(command);
     }
 

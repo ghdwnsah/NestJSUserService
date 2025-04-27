@@ -29,6 +29,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   async validate(req: Request, payload: any) {
     const authHeader = req.headers['authorization']; // ex) Bearer xxx.yyy.zzz
     const accessToken = authHeader?.split(' ')[1];
+    console.log('payload : ', payload);
     const userId = payload.id || payload.sub; // payload에서 id 또는 sub 가져오기
 
     const forwarded = req.headers['x-forwarded-for'];

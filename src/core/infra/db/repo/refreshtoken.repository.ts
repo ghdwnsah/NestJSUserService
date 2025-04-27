@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../prisma.service";
 import { IRefreshTokenRepositoryForAuth } from "@/auth/infra/adaper/iRefreshToken.repository";
+import { RefreshToken } from "@prisma/client";
 
 @Injectable()
 export class RefreshTokenRepository implements IRefreshTokenRepositoryForAuth {
@@ -28,6 +29,18 @@ export class RefreshTokenRepository implements IRefreshTokenRepositoryForAuth {
               ip,
             },
           });
+      }
+
+      async findValidRefreshToken(refreshToken: string): Promise<RefreshToken> {
+        return this.prismaService.refreshToken.findFirst({
+          where: {
+            token: refreshToken,
+            isValid: true,
+            expiresAt: {
+              gt: new Date(), // 현재 시간보다 만료시간이 더 큰 (아직 안 만료된)
+            },
+          },
+        });
       }
     
 }
