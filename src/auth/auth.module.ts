@@ -15,6 +15,7 @@ import { LoginUserHandler } from './application/command/login-user.handler';
 import { RefreshTokenRepository } from '@/core/infra/db/repo/refreshtoken.repository';
 import { UpdateResetPasswordRequestHandler } from './application/command/update-resetPasswordRequest.handler';
 import { UpdateResetPasswordConfirmHandler } from './application/command/update-resetPasswordconfirm.handler';
+import { CustomCacheService } from '@/shared/cache/cache.service';
 
 
 const CommandHandlers = [
@@ -41,7 +42,6 @@ const CommandHandlers = [
             }),
         }),
         PrismaModule,
-        // CustomCacheModule,
         CqrsModule,
     ],
     controllers: [
@@ -50,7 +50,7 @@ const CommandHandlers = [
     providers: [
         AuthService, 
         JwtStrategy,
-        // CustomCacheService,
+        CustomCacheService,
         { provide: 'UserRepository', useClass: UserRepository },
         { provide: 'UserRepository', useClass: UserRepository },
         { provide: 'RefreshTokenRepository', useClass: RefreshTokenRepository },

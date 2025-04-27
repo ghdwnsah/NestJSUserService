@@ -22,13 +22,17 @@ import { RedisClientOptions } from 'redis';
 import { APP_FILTER } from '@nestjs/core';
 import { HttpExceptionFilter } from './shared/filter/httpException.filter';
 import KeyvRedis, { createKeyv } from '@keyv/redis';
+import { CustomCacheModule } from './shared/cache/cache.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: [`${__dirname}/core/common/config/env/.${process.env.NODE_ENV}.env`],
-      load: [emailConfig],
+      load: [
+        authConfig, 
+        emailConfig,
+      ],
       cache: true,
       validationSchema,
     }),
@@ -48,15 +52,16 @@ import KeyvRedis, { createKeyv } from '@keyv/redis';
 	      })
 	    ]
 	  }),
-    CacheModule.registerAsync({ 
-      isGlobal: true,
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: async (config: ConfigService) => ({
-        stores: [createKeyv(`redis://${config.get<string>('REDIS_HOST') || 'localhost'}:${config.get<string>('REDIS_PORT') || 6379}`)],
-        ttl: parseInt(config.get<string>('CACHE_TTL'), 10) || 3600000,
-      })
-    })
+    CustomCacheModule,
+    // CacheModule.registerAsync({ 
+    //   isGlobal: true,
+    //   imports: [ConfigModule],
+    //   inject: [ConfigService],
+    //   useFactory: async (config: ConfigService) => ({
+    //     stores: [createKeyv(`redis://${config.get<string>('REDIS_HOST') || 'localhost'}:${config.get<string>('REDIS_PORT') || 6379}`)],
+    //     ttl: parseInt(config.get<string>('CACHE_TTL'), 10) || 3600000,
+    //   })
+    // })
     // CacheModule.register({ 
     //   isGlobal: true,
     //   stores: [ createKeyv('redis://localhost:6379') ],

@@ -15,41 +15,42 @@ import { PrismaService } from '@/core/infra/db/prisma.service';
 import { v4 as uuidv4 } from 'uuid';
 import { addMinutes } from 'date-fns';
 import { LoginResponse } from '@/email/interface/response/login.response';
-// import { CustomCacheService } from '@/shared/cache/cache.service';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Cache } from 'cache-manager';
+import { CustomCacheService } from '@/shared/cache/cache.service';
 
 @Injectable()
 export class AuthService {
   constructor(
-    @Inject(authConfig.KEY) private config: ConfigType<typeof authConfig>,
     private readonly jwtService: JwtService,
     private readonly prismaService: PrismaService,
-    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    private readonly cacheService: CustomCacheService,
   ) {}
 
   async login(user: UserInfo, ip: string): Promise<LoginResponse> {
-    console.log('cacheManager.stores : ', this.cacheManager.stores);
-    console.log('cacheManager store : ', this.cacheManager.stores[0].opts.store);
     await this.invalidatePreviousRefreshTokens(user.id);
+    await this.setUserAccessTokenBlacklistCache(user.id);
+    await this.clearUserTokenCache(user.id);
     return this.generateTokens(user, ip);
   }
 
   async verify(jwtString: string) {
+    const payload = this.jwtService.verify(jwtString);
+    const { id, name, email } = payload;
+
     try {
-      // const cachedPayload = await this.cacheService.getAccessCache(jwtString);
-      const cachedPayload = await this.cacheManager.get<any>(`access:${jwtString}`);
+      const isBlacklisted = await this.cacheService.getIsAccessTokenBlacklistCache(id, jwtString);
+      if (isBlacklisted) {
+        console.warn('Access token is blacklisted');
+        throw new UnauthorizedException('Access token has been revoked');
+      }
+
+      const cachedPayload = await this.cacheService.getAccessTokenCache(id, jwtString);
       if (cachedPayload) {
         console.log('Token loaded from cache');
         return cachedPayload;
-      }
+      }      
 
-      const payload = this.jwtService.verify(jwtString);
-      const { id, name, email } = payload;
-
-      // 캐시에 저장
-      // await this.cacheService.setAccessCache(jwtString, payload);
-      await this.cacheManager.set(`access:${jwtString}`, payload, 36000 );
+      // 없으면 캐시에 저장
+      await this.cacheService.setUserAccessTokenCache(payload.id, jwtString, payload);
 
       return {
         id,
@@ -71,6 +72,14 @@ export class AuthService {
         isValid: false,
       },
     });
+  }
+
+  async setUserAccessTokenBlacklistCache(userId: string) {
+    await this.cacheService.setUserAccessTokenBlacklistCache(userId);
+  }
+
+  async clearUserTokenCache(userId: string) {
+    await this.cacheService.clearUserAllTokenCaches(userId);
   }
 
   async generateTokens(user: UserInfo, ip: string) {
@@ -97,8 +106,7 @@ export class AuthService {
     });
 
     // await this.cacheService.setAllCache(accessToken, refreshToken, saveCacheValue);
-    await this.cacheManager.set(`access:${accessToken}`, saveCacheValue, 46000 );
-    await this.cacheManager.set(`refresh:${refreshToken}`, saveCacheValue, 46000 );
+    await this.cacheService.setUserAllTokenCache(user.id, accessToken, refreshToken, saveCacheValue)
     console.log('===TOKEN 저장 시===');
     console.log(`[[${accessToken}]]`, accessToken.length);
 
