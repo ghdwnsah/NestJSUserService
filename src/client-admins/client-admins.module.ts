@@ -8,6 +8,8 @@ import { CreateUserHandler } from "./application/command/create-clientadmin.hand
 import { NodemailerEmailService } from "@/email/infra/nodemailer-email.service";
 import { UserEventsHandler } from "@/core/application/event/users-event.handler";
 import { GetClientUserInfoHandler } from "./application/query/get-clientUserInfo.handler";
+import { PaidClientCheckPipe } from "@/core/infra/pipe/paidClientCheck.pipe";
+import { ClientRepository } from "@/core/infra/db/repo/client.repository";
 
 
 @Module({
@@ -33,7 +35,9 @@ import { GetClientUserInfoHandler } from "./application/query/get-clientUserInfo
 
         // core
         {provide: 'UserRepository', useClass: UserRepository},
+        {provide: 'ClientRepository', useClass: ClientRepository},
         UserEventsHandler,
+        PaidClientCheckPipe,
     ],
     exports: []
 })

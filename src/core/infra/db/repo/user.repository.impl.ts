@@ -127,7 +127,10 @@ IUserRepositoryForAuth {
   }
 
   async findUserById(id: string): Promise<User> {
-    return await this.prisma.user.findFirst({ where: { id } });
+    return await this.prisma.user.findFirst({ where: { id }, 
+    include: {
+      client: true,
+    }, });
   }
 
   async findOneForClientAdmin(id: string, clientId: string): Promise<User> {

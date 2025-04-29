@@ -39,6 +39,7 @@ export class LoginUserHandler implements ICommandHandler<LoginUserCommand> {
           id: user.id,
           name: user.name,
           email: user.email,
+          clientId: user.clientId,
         }
 
         await this.refreshTokenRepository.updateInvalidatePreviousRefreshTokens(userInfo.id);
@@ -46,6 +47,7 @@ export class LoginUserHandler implements ICommandHandler<LoginUserCommand> {
             id: user.id,
             name: user.name,
             email: user.email,
+            clientId: user.clientId,
         }, ip);
         
       } catch (e) {

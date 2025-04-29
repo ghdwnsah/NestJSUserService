@@ -4,6 +4,7 @@ import { ConfigType } from "@nestjs/config";
 import { Cache } from 'cache-manager';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Redis } from 'ioredis';
+import { TokenCachePayload } from "@/core/interface/cache/token.interface";
 
 const getUserTokenPrefix = (userId: string | number) => `user:${userId}:token`;
 
@@ -19,11 +20,11 @@ export class CustomCacheService {
         @InjectRedis() private readonly redis: Redis,
     ){}
 
-    async getAccessTokenCache (userId: string, jwtString: string) {
+    async getAccessTokenCache (userId: string, jwtString: string): Promise<TokenCachePayload> {
         const prefix = getUserAccessTokenPrefix(userId);
         return await this.cacheManager.get<any>(`${prefix}:${jwtString}`);
     }
-    async getRefreshTokenCache (userId: string, jwtString: string) {
+    async getRefreshTokenCache (userId: string, jwtString: string): Promise<TokenCachePayload> {
         const prefix = getUserRefreshTokenPrefix(userId);
         return await this.cacheManager.get<any>(`${prefix}:${jwtString}`);        
     }

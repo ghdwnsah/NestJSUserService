@@ -7,6 +7,7 @@ import { join } from 'path';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { WinstonModule, utilities as nestWinstonModuleUtilities } from 'nest-winston';
 import * as winston from 'winston';
+import { LoggingInterceptor } from './core/infra/intercepter/logging.intercepter';
 
 async function bootstrap() {
   const logger = WinstonModule.createLogger({

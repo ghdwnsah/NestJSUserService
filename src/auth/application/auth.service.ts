@@ -16,6 +16,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { addMinutes } from 'date-fns';
 import { LoginResponse } from '@/email/interface/response/login.response';
 import { CustomCacheService } from '@/shared/cache/cache.service';
+import { TokenCachePayload } from '@/core/interface/cache/token.interface';
+import { SlackService } from '@/shared/slack/slack.service';
+import { NodemailerEmailService } from '@/email/infra/nodemailer-email.service';
 
 @Injectable()
 export class AuthService {
@@ -23,16 +26,20 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly prismaService: PrismaService,
     private readonly cacheService: CustomCacheService,
+    private readonly slackService: SlackService,
+    private readonly emailService: NodemailerEmailService,
   ) {}
 
   async login(user: UserInfo, ip: string): Promise<LoginResponse> {
     await this.invalidatePreviousRefreshTokens(user.id);
     await this.setUserAccessTokenBlacklistCache(user.id);
     await this.clearUserTokenCache(user.id);
+    this.slackService.sendMessage(
+      `User ${user.id} login from IP ${ip}`);
     return this.generateTokens(user, ip);
   }
 
-  async verify(jwtString: string) {
+  async verify(jwtString: string, ip: string) {
     const payload = this.jwtService.verify(jwtString);
     const { id, name, email } = payload;
 
@@ -50,7 +57,15 @@ export class AuthService {
       }      
 
       // 없으면 캐시에 저장
-      await this.cacheService.setUserAccessTokenCache(payload.id, jwtString, payload);
+      const cachePayload: TokenCachePayload = {
+        id: payload.id,
+        email: payload.email,
+        name: payload.name,
+        clientId: payload.clientId,
+        ip,
+        issuedAt: Date.now(),
+      }
+      await this.cacheService.setUserAccessTokenCache(payload.id, jwtString, cachePayload);
 
       return {
         id,
@@ -90,10 +105,13 @@ export class AuthService {
     const refreshToken = uuidv4();
     const expiresAt = addMinutes(new Date(), 60 * 24 * 14); // 14일
 
-    const saveCacheValue = {
-      userId: user.id,
-      userEmail: user.email,
+    const cachePayload: TokenCachePayload = {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      clientId: user.clientId,
       ip,
+      issuedAt: Date.now(),
     } 
 
     await this.prismaService.refreshToken.create({
@@ -105,8 +123,7 @@ export class AuthService {
       },
     });
 
-    // await this.cacheService.setAllCache(accessToken, refreshToken, saveCacheValue);
-    await this.cacheService.setUserAllTokenCache(user.id, accessToken, refreshToken, saveCacheValue)
+    await this.cacheService.setUserAllTokenCache(user.id, accessToken, refreshToken, cachePayload)
     console.log('===TOKEN 저장 시===');
     console.log(`[[${accessToken}]]`, accessToken.length);
 
@@ -159,20 +176,16 @@ export class AuthService {
 
   async handleTokenTheft(userId: string, suspiciousIp: string) {
     await this.invalidateUserTokens(userId);
-
-    console.warn(
-      `[SECURITY] Refresh token theft suspected from IP: ${suspiciousIp}`,
-    );
-
-    // Example: Add IP to denylist table
+  
+    console.warn(`[SECURITY] Refresh token theft suspected from IP: ${suspiciousIp}`);
+  
     await this.prismaService.ipDenylist.upsert({
       where: { ip: suspiciousIp },
       update: {},
       create: { ip: suspiciousIp, reason: 'Token theft suspected' },
     });
-
-    // Example: Send Slack or Email alert (stub)
-    this.notifySecurityTeam(userId, suspiciousIp);
+    
+    await this.notifySecurityTeam(userId, suspiciousIp);
   }
 
   async notifySecurityTeam(userId: string, ip: string) {
@@ -180,8 +193,16 @@ export class AuthService {
       `[ALERT] Notifying security team about possible breach by user ${userId} from IP ${ip}`,
     );
 
-    // TODO: Replace with email or Slack API integration
-    // emailService.sendAlert(userId, ip);
-    // slackService.sendMessage(`#security`, `🚨 Token theft from IP ${ip} for user ${userId}`);
+    // 1. Slack 알림
+    await this.slackService.sendMessage(
+      `🚨 [SECURITY] Suspicious IP access detected.\nUser ID: ${userId}\nIP: ${ip}`
+    );
+  
+    // 2. Email 알림
+    const user = await this.prismaService.user.findUnique({ where: { id: userId } });
+  
+    if (user) {
+      await this.emailService.sendSecurityAlertEmail(user.email, user.name, ip);
+    }
   }
 }

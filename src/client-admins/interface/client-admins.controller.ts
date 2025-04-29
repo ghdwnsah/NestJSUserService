@@ -1,7 +1,7 @@
 import { Role } from "@/core/common/roles/role.enum";
 import { Roles } from "@/core/common/roles/roles.decorator";
 
-import { Body, Controller, Get, Inject, Logger, LoggerService, Param, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Inject, Logger, LoggerService, Param, Post, UseGuards, UsePipes } from "@nestjs/common";
 import { CreateClientAdminDto } from "./dto/create-client-admin.dto";
 import { CreateClientAdminUserResponse } from "./reponse/createClientAdminUser.response";
 import { JwtAuthGuard } from "@/auth/jwt-auth.guard";
@@ -13,6 +13,8 @@ import { GetClientUserInfoQuery } from "../application/query/get-clientUserInfo.
 
 import { ApiOperation,  ApiTags } from "@nestjs/swagger";
 import { ApiDefaultResponses } from "@/shared/swagger/api-default-responses.decorator";
+import { PaidClientCheckPipe } from "@/core/infra/pipe/paidClientCheck.pipe";
+import { PaidClientGuard } from "@/auth/infra/guard/paidClientCheck.guard";
 
 
 
@@ -49,7 +51,7 @@ export class ClientAdminsController {
 
     @ApiOperation({ summary: '유저 찾기', description: '현재는 id 기반' })
     @ApiDefaultResponses()
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, PaidClientGuard)
     @Roles(Role.ClientAdmin)
     @Get()
     async findOne(

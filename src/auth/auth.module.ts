@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Logger, Module } from '@nestjs/common';
 import { AuthService } from './application/auth.service';
 import authConfig from '@/core/common/config/authConfig';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -17,6 +17,9 @@ import { UpdateResetPasswordRequestHandler } from './application/command/update-
 import { UpdateResetPasswordConfirmHandler } from './application/command/update-resetPasswordconfirm.handler';
 import { CustomCacheService } from '@/shared/cache/cache.service';
 import { UpdateRefreshAccessTokenHandler } from './application/command/update-refreshAccessToken.handler';
+import { ClientRepository } from '@/core/infra/db/repo/client.repository';
+import { SlackService } from '@/shared/slack/slack.service';
+import { NodemailerEmailService } from '@/email/infra/nodemailer-email.service';
 
 
 const CommandHandlers = [
@@ -50,10 +53,14 @@ const CommandHandlers = [
         AuthController
     ],
     providers: [
+        Logger,
         AuthService, 
         JwtStrategy,
         CustomCacheService,
+        SlackService,
+        NodemailerEmailService,
         { provide: 'UserRepository', useClass: UserRepository },
+        { provide: 'ClientRepository', useClass: ClientRepository },
         { provide: 'RefreshTokenRepository', useClass: RefreshTokenRepository },
         ...CommandHandlers,
     ],

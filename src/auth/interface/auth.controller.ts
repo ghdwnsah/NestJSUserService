@@ -53,7 +53,7 @@ export class AuthController {
     async refreshAccessToken(@Body() refreshTokenDto: RefreshAccessTokenDto, @Ip() ip: string) {
       const { refreshToken, id } = refreshTokenDto;
       
-      const command = new UpdateRefreshAccessTokenCommand(id, refreshToken);
+      const command = new UpdateRefreshAccessTokenCommand(id, refreshToken, ip);
       return this.commandBus.execute(command);
     }
 

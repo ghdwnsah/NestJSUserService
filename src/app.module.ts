@@ -23,6 +23,8 @@ import { APP_FILTER } from '@nestjs/core';
 import { HttpExceptionFilter } from './shared/filter/httpException.filter';
 import KeyvRedis, { createKeyv } from '@keyv/redis';
 import { CustomCacheModule } from './shared/cache/cache.module';
+import { LoggingModule } from './core/infra/logging.module';
+import { SlackModule } from './shared/slack/slack.module';
 
 @Module({
   imports: [
@@ -53,6 +55,8 @@ import { CustomCacheModule } from './shared/cache/cache.module';
 	    ]
 	  }),
     CustomCacheModule,
+    LoggingModule,
+    SlackModule,
     // CacheModule.registerAsync({ 
     //   isGlobal: true,
     //   imports: [ConfigModule],

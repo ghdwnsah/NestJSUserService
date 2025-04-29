@@ -5,6 +5,7 @@ import { UserRepository } from "./user.repository.impl";
 
 import { Inject, Injectable } from "@nestjs/common";
 import { Client, } from "@prisma/client";
+import { IUserRepoForCore } from "../../adapter/iUser.repository";
 // import { IClientRepoForClientUsers } from "@/client-users/application/port/iClientRepoForClientUsers.service";
 // import { IUserRepositoryForCore } from "@/core/application/port/iUser.repository";
 
@@ -12,8 +13,7 @@ import { Client, } from "@prisma/client";
 export class ClientRepository {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly userRepository: UserRepository,
-    // private readonly userRepository: IUserRepositoryForCore,
+    @Inject('UserRepository') private readonly userRepository: IUserRepoForCore,
   ) {}
 
   async createClientUser(createUserDbDto: CreateUserDbDto): Promise<void> {
@@ -67,6 +67,13 @@ export class ClientRepository {
       select: { isPaid: true },
     });
     return client?.isPaid || false;
+  }
+
+  async isClientPaidByUserInfo(userId: string): Promise<boolean> {
+    console.log('userId : ', userId);
+    const user = await this.userRepository.findUserById(userId);// TODO : 여기 나중에 타입 명확히 하기
+    console.log('user : ', user);
+    return user?.client.isPaid || false;
   }
 
   // // 클라이언트에 관리자 추가

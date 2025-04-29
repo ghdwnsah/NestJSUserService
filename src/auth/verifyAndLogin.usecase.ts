@@ -20,6 +20,7 @@ export class VerifyAndLoginUseCase {
             id: user.id,
             name: user.name,
             email: user.email,
+            clientId: user.clientId,
         }, ip);
     }
 }

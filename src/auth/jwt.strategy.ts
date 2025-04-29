@@ -7,15 +7,14 @@ import { PrismaService } from '@/core/infra/db/prisma.service';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { CustomCacheService } from '@/shared/cache/cache.service';
-import { Request } from 'express'; // 여기서 express Request 명시!
+import { Request } from 'express';
+import { TokenCachePayload } from '@/core/interface/cache/token.interface';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(
     configService: ConfigService,
     private readonly prisma: PrismaService,
-    // private readonly cacheService: CustomCacheService,
-    // @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private readonly cacheService: CustomCacheService,
   ) {
     super({
@@ -46,41 +45,47 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     }
   
     // 캐시에서 유저 정보 조회
-    let user = await this.cacheService.getAccessTokenCache(userId, accessToken);
-    if (user) {
+    let userInfoCache = await this.cacheService.getAccessTokenCache(userId, accessToken);
+    if (userInfoCache) {
       console.log('User loaded from cache');
-      console.log('JSON string, parse : ', JSON.parse(JSON.stringify(user)));
+      console.log('JSON string, parse : ', JSON.parse(JSON.stringify(userInfoCache)));
 
-      return JSON.parse(JSON.stringify(user));
+      return JSON.parse(JSON.stringify(userInfoCache));
     }
 
     // 캐시에 없으면 DB에서 조회
-    user = await this.prisma.user.findFirst({
-      where: { id: payload.sub },
+    let userInfoDb = await this.prisma.user.findFirst({
+      where: { id: payload.id },
       include: {
         client: true,
         refreshTokens: true,
       },
     });
+    console.log('db 조회 user : ', userInfoDb);
 
-    if (!user) {
+    if (!userInfoDb) {
       throw new UnauthorizedException('User not found');
     }
 
     // 캐시에 저장
-    const validRefreshToken = user.refreshTokens.find(token => token.isValid);
-    if (!validRefreshToken) {
-      throw new UnauthorizedException('No valid refresh token found');
-    }
-    const saveCacheValue = {
-      userId: user.id,
-      userEmail: user.email,
+    const saveCacheValue: TokenCachePayload = {
+      id: userInfoDb.id,
+      name: userInfoDb.name,
+      email: userInfoDb.email,
+      clientId: userInfoDb.clientId,
       ip,
+      issuedAt: Date.now(),
     } 
-    await this.cacheService.setUserAllTokenCache(user.id, accessToken, validRefreshToken, saveCacheValue)
+    const validRefreshToken = userInfoDb.refreshTokens.find(token => token.isValid);
+    if (validRefreshToken) { // 리프레시 토큰도 있다면
+      await this.cacheService.setUserAllTokenCache(userInfoDb.id, accessToken, validRefreshToken.token, saveCacheValue)
+    }
+    else {
+      await this.cacheService.setUserAccessTokenCache(userInfoDb.id, accessToken, saveCacheValue)
+    }
     
-    console.log('User loaded from database and cached, user : ', user);
+    console.log('User loaded from database and cached, user : ', userInfoDb);
 
-    return user;
+    return userInfoDb;
   }
 }
