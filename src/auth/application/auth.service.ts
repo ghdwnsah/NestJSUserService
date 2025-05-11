@@ -20,6 +20,8 @@ import { TokenCachePayload } from '@/core/interface/cache/token.interface';
 import { SlackService } from '@/shared/slack/slack.service';
 import { NodemailerEmailService } from '@/email/infra/nodemailer-email.service';
 
+import * as geoip from 'geoip-lite';
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -30,12 +32,22 @@ export class AuthService {
     private readonly emailService: NodemailerEmailService,
   ) {}
 
-  async login(user: UserInfo, ip: string): Promise<LoginResponse> {
+  async login(user: UserInfo, ip: string, deviceToken?: string, userAgent?: string): Promise<LoginResponse> {
     await this.invalidatePreviousRefreshTokens(user.id);
     await this.setUserAccessTokenBlacklistCache(user.id);
     await this.clearUserTokenCache(user.id);
     this.slackService.sendMessage(
       `User ${user.id} login from IP ${ip}`);
+
+    if (user.isTwoFactorEnabled && !deviceToken) {
+      throw new UnauthorizedException('2FA is enabled, but no device token provided, please OTP verfify and register your device first.');
+    }
+
+    let trustedDeviceToken = deviceToken;
+    if (user.isTwoFactorEnabled) {
+      trustedDeviceToken = await this.validateOrRegisterDevice(user.id, deviceToken, ip, userAgent);
+    }
+
     return this.generateTokens(user, ip);
   }
 
@@ -62,6 +74,7 @@ export class AuthService {
         email: payload.email,
         name: payload.name,
         clientId: payload.clientId,
+        isTwoFactorEnabled: payload.isTwoFactorEnabled,
         ip,
         issuedAt: Date.now(),
       }
@@ -97,19 +110,15 @@ export class AuthService {
     await this.cacheService.clearUserAllTokenCaches(userId);
   }
 
-  async generateTokens(user: UserInfo, ip: string) {
+  async generateTokens(user: UserInfo, ip: string, deviceToken?: string): Promise<LoginResponse> {
     console.log('payload user : ', user);
     const payload = { ...user };
     const accessToken = this.jwtService.sign(payload);
-
     const refreshToken = uuidv4();
     const expiresAt = addMinutes(new Date(), 60 * 24 * 14); // 14일
 
     const cachePayload: TokenCachePayload = {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      clientId: user.clientId,
+      ...user,
       ip,
       issuedAt: Date.now(),
     } 
@@ -123,11 +132,58 @@ export class AuthService {
       },
     });
 
-    await this.cacheService.setUserAllTokenCache(user.id, accessToken, refreshToken, cachePayload)
+    await this.cacheService.setUserAllTokenCache(user.id, accessToken, refreshToken, cachePayload, deviceToken)
     console.log('===TOKEN 저장 시===');
     console.log(`[[${accessToken}]]`, accessToken.length);
 
-    return { accessToken, refreshToken };
+    return { 
+      accessToken, 
+      refreshToken,
+      ...(deviceToken && { deviceToken }),
+    };
+  }
+
+  async validateOrRegisterDevice(
+    userId: string,
+    deviceToken: string | undefined,
+    ip: string,
+    userAgent?: string,
+  ): Promise<string> {
+    const now = new Date();
+    const deviceLifespanMinutes = 60 * 24 * 30; // 30일
+  
+    // 1. 기존 등록된 deviceToken이 유효한가?
+    if (deviceToken) {
+      const deviceInfo = await this.prismaService.trustedDevice.findUnique({
+        where: { deviceToken },
+      });
+
+      if (deviceInfo.ipAddress !== ip) {
+        // 의심 로그인 감지: 등록된 디바이스지만 IP 변경
+        const geo = geoip.lookup(ip);
+        const locationText = geo ? `${geo.city || ''}, ${geo.country || 'Unknown'}` : 'Unknown';
+        await this.handleTokenTheft(userId, ip, locationText);
+        throw new UnauthorizedException('의심스러운 로그인 감지됨');
+      }
+  
+      if (deviceInfo && deviceInfo.userId === userId && deviceInfo.expiresAt > now) {
+        return deviceToken; // 유효한 토큰 → 그대로 사용
+      }
+    }
+  
+    // 2. 새로운 deviceToken 생성
+    const newToken = uuidv4();
+    await this.prismaService.trustedDevice.create({
+      data: {
+        userId,
+        deviceToken: newToken,
+        ipAddress: ip,
+        userAgent,
+        expiresAt: addMinutes(now, deviceLifespanMinutes),
+      },
+    });
+  
+    return newToken;
   }
 
   async refreshTokens(refreshToken: string, ip: string) {
@@ -174,7 +230,7 @@ export class AuthService {
     });
   }
 
-  async handleTokenTheft(userId: string, suspiciousIp: string) {
+  async handleTokenTheft(userId: string, suspiciousIp: string, locationText?: string) {
     await this.invalidateUserTokens(userId);
   
     console.warn(`[SECURITY] Refresh token theft suspected from IP: ${suspiciousIp}`);
@@ -185,10 +241,10 @@ export class AuthService {
       create: { ip: suspiciousIp, reason: 'Token theft suspected' },
     });
     
-    await this.notifySecurityTeam(userId, suspiciousIp);
+    await this.notifySecurityTeam(userId, suspiciousIp, locationText);
   }
 
-  async notifySecurityTeam(userId: string, ip: string) {
+  async notifySecurityTeam(userId: string, ip: string, locationText?: string) {
     console.log(
       `[ALERT] Notifying security team about possible breach by user ${userId} from IP ${ip}`,
     );
@@ -200,9 +256,22 @@ export class AuthService {
   
     // 2. Email 알림
     const user = await this.prismaService.user.findUnique({ where: { id: userId } });
+
+     // 2-1. resetPasswordToken 생성
+    const resetToken = uuidv4();
+    const expireMinutes = 30; // 30분 유효
+    const expiresAt = addMinutes(new Date(), expireMinutes); 
+
+    await this.prismaService.user.update({
+      where: { id: userId },
+      data: {
+        resetPasswordToken: resetToken,
+        resetPasswordExpires: expiresAt,
+      },
+    });
   
     if (user) {
-      await this.emailService.sendSecurityAlertEmail(user.email, user.name, ip);
+      await this.emailService.sendSecurityAlertEmail(user.email, user.name, ip, resetToken, expireMinutes, locationText);
     }
   }
 }

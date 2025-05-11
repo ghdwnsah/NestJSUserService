@@ -24,6 +24,7 @@ export class VerifyUserEmailHandler implements ICommandHandler<VerifyUserEmailCo
             name: user.name,
             email: user.email,
             clientId: user.clientId,
+            isTwoFactorEnabled: user.isTwoFactorEnabled,
         }, ip);
     }
 }

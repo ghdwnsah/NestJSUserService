@@ -25,6 +25,7 @@ import KeyvRedis, { createKeyv } from '@keyv/redis';
 import { CustomCacheModule } from './shared/cache/cache.module';
 import { LoggingModule } from './core/infra/logging.module';
 import { SlackModule } from './shared/slack/slack.module';
+import { NotificationModule } from './noti/notification.module';
 
 @Module({
   imports: [
@@ -57,6 +58,7 @@ import { SlackModule } from './shared/slack/slack.module';
     CustomCacheModule,
     LoggingModule,
     SlackModule,
+    NotificationModule,
     // CacheModule.registerAsync({ 
     //   isGlobal: true,
     //   imports: [ConfigModule],

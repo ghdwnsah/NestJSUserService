@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Notification Test Page</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans">
+  <div class="max-w-xl mx-auto mt-10 p-6 bg-white shadow-xl rounded-lg">
+    <h1 class="text-2xl font-bold mb-4 text-center">🚀 Notification Test Page</h1>
+
+    <section class="mb-6">
+      <h2 class="text-lg font-semibold text-blue-600">WebSocket Notifications</h2>
+      <div id="ws-log" class="mt-2 bg-gray-50 p-3 border rounded h-32 overflow-y-scroll text-sm"></div>
+    </section>
+
+    <section class="mb-6">
+      <h2 class="text-lg font-semibold text-green-600">SSE Notifications</h2>
+      <div id="sse-log" class="mt-2 bg-gray-50 p-3 border rounded h-32 overflow-y-scroll text-sm"></div>
+    </section>
+
+    <section>
+      <h2 class="text-lg font-semibold text-purple-600">📤 Broadcast Notification</h2>
+      <div class="flex items-center gap-2 mt-2">
+        <input id="message-input" type="text" placeholder="Enter message..." class="flex-1 p-2 border rounded"/>
+        <button onclick="sendNotification()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Send</button>
+      </div>
+    </section>
+  </div>
+
+  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+  <script>
+    const userId = '123';
+
+    const socket = io('/notifications', { query: { userId } });
+    socket.on('notification', (data) => {
+      document.getElementById('ws-log').innerHTML += `<p>WS: ${JSON.stringify(data)}</p>`;
+    });
+
+    const sse = new EventSource('/notifications/stream');
+    sse.onmessage = (event) => {
+      document.getElementById('sse-log').innerHTML += `<p>SSE: ${event.data}</p>`;
+    };
+
+    function sendNotification() {
+      const msg = document.getElementById('message-input').value;
+      if (!msg.trim()) return;
+      fetch('/notifications/broadcast', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg })
+      });
+      document.getElementById('message-input').value = '';
+    }
+  </script>
+</body>
+</html>

@@ -2,7 +2,7 @@ import { BadRequestException, Inject, Injectable } from "@nestjs/common";
 import { IQueryHandler, QueryHandler } from "@nestjs/cqrs";
 import { GetClientUserInfoQuery } from "./get-clientUserInfo.query";
 import { iUserRepositoryForClientAdmins } from "@/client-admins/infra/adapter/iUser.repository";
-import { GetClientUserInfoQueryResponse } from "@/client-admins/interface/reponse/get-clientUserInfoQuery.response";
+import { GetClientUserInfoQueryResponse } from "@/client-admins/interface/response/get-clientUserInfoQuery.response";
 
 @Injectable()
 @QueryHandler(GetClientUserInfoQuery)

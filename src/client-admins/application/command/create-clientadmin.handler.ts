@@ -1,30 +1,30 @@
 import { CommandHandler, EventBus, ICommandHandler } from '@nestjs/cqrs';
-import { CreateClientAdminCommand } from './create-clientadmin.command';
+import { CreateClientAdminUserCommand } from './create-clientadmin.command';
 import { Injectable } from '@nestjs/common';
 import { CreateUserDto } from '@/core/interface/dto/create-user.dto';
-import { CreateClientDto } from '@/client-admins/interface/dto/create-client.dto';
-import { CreateUserDbDto } from '@/core/interface/dto/create-user-db.dto';
+import { CreateClientDto } from '@/core/interface/dto/create-client.dto';
+import { CreateUserDbModel } from '@/core/domain/db/create-user-db.model';
 
 import { ulid } from 'ulid';
-import { hashPassword } from '@/core/common/validators/password.validator';
-import { signupVerifyTokenCreate } from '@/core/common/validators/signupVerifyToken.validator';
+import { hashPassword } from '@/core/common/utils/hashPassword';
+import { signupVerifyTokenCreate } from '@/core/common/utils/signupVerifyToken';
 import { Role } from '@/core/common/roles/role.enum';
-import { CreateClientDbDto } from '@/client-admins/interface/dto/create-client-db.dto';
+import { CreateClientDbDto } from '@/core/interface/dto/create-client-db.dto';
 import { NodemailerEmailService } from '@/email/infra/nodemailer-email.service';
 import { ClientAdminsRepository } from '@/client-admins/infra/db/client-admins.repository';
 import { UserCreatedEvent } from '@/core/domain/userCreate-event';
 
 
 @Injectable()
-@CommandHandler(CreateClientAdminCommand)
-export class CreateUserHandler implements ICommandHandler<CreateClientAdminCommand> {
+@CommandHandler(CreateClientAdminUserCommand)
+export class CreateClientAdminUserHandler implements ICommandHandler<CreateClientAdminUserCommand> {
     constructor (
         private readonly clientAdminsRepository: ClientAdminsRepository,
         private readonly nodemailerEmailService: NodemailerEmailService,
         private readonly eventBus: EventBus,
     ) {}
 
-	async execute(command: CreateClientAdminCommand) {
+	async execute(command: CreateClientAdminUserCommand) {
 		const { name, email, password, clientName } = command;
 
         const createUserDto: CreateUserDto = {
@@ -36,7 +36,7 @@ export class CreateUserHandler implements ICommandHandler<CreateClientAdminComma
             name: clientName,
         };
 
-        const createUserDbDto: CreateUserDbDto = {
+        const createUserDbDto: CreateUserDbModel = {
             id: ulid(),
             name: createUserDto.name,
             email: createUserDto.email,
@@ -59,9 +59,5 @@ export class CreateUserHandler implements ICommandHandler<CreateClientAdminComma
 
     private generateClientCode(): string {
         return `CL-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
-    }
-    
-    private async sendMemberJoinEmail(email: string, signupVerifyToken: string){
-        await this.nodemailerEmailService.sendMemberJoinVerification(email, signupVerifyToken);
     }
 }

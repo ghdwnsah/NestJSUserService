@@ -40,6 +40,7 @@ export class LoginUserHandler implements ICommandHandler<LoginUserCommand> {
           name: user.name,
           email: user.email,
           clientId: user.clientId,
+          isTwoFactorEnabled: user.isTwoFactorEnabled,
         }
 
         await this.refreshTokenRepository.updateInvalidatePreviousRefreshTokens(userInfo.id);
@@ -48,6 +49,7 @@ export class LoginUserHandler implements ICommandHandler<LoginUserCommand> {
             name: user.name,
             email: user.email,
             clientId: user.clientId,
+            isTwoFactorEnabled: user.isTwoFactorEnabled,
         }, ip);
         
       } catch (e) {

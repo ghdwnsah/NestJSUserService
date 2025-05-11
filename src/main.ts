@@ -31,7 +31,8 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe({
     transform: true,
   }))
-  app.useStaticAssets(join(__dirname, '..', 'public'));
+  // app.useStaticAssets(join(__dirname, '..', 'public'));
+  app.useStaticAssets(join(__dirname, 'public'));
   if (process.env.NODE_ENV === 'development') {
     console.log('swagger 문서 작동');
     const config = new DocumentBuilder()

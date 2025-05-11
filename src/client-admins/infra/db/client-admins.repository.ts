@@ -1,10 +1,10 @@
 // import { IClientAdminsRepoForClientAdmins } from "@/client-admins/application/ports/iClientAdmins.repository";
 // import { iUserRepositoryForClientAdmins } from "@/client-admins/application/ports/iUser.repository";
-import { CreateClientDbDto } from "@/client-admins/interface/dto/create-client-db.dto";
-import { CreateClientAdminUserResponse } from "@/client-admins/interface/reponse/createClientAdminUser.response";
+import { CreateClientDbDto } from "@/core/interface/dto/create-client-db.dto";
+import { CreateClientAdminUserResponse } from "@/client-admins/interface/response/createClientAdminUser.response";
 // import { IClientRepoForClientUsers } from "@/client-users/application/port/iClientRepoForClientUsers.service";
 import { PrismaService } from "@/core/infra/db/prisma.service";
-import { CreateUserDbDto } from "@/core/interface/dto/create-user-db.dto";
+import { CreateUserDbModel } from "@/core/domain/db/create-user-db.model";
 import { Inject, Injectable } from "@nestjs/common";
 import { Client, User } from "@prisma/client";
 import { iUserRepositoryForClientAdmins } from "../adapter/iUser.repository";
@@ -17,7 +17,7 @@ export class ClientAdminsRepository {
         @Inject('UserRepository') private readonly userRepository: iUserRepositoryForClientAdmins,
     ) {}
 
-    async createClientAdminUser(createUserDbDto: CreateUserDbDto, clientDbDto: CreateClientDbDto): Promise<CreateClientAdminUserResponse> {
+    async createClientAdminUser(createUserDbDto: CreateUserDbModel, clientDbDto: CreateClientDbDto): Promise<CreateClientAdminUserResponse> {
         return await this.prismaService.$transaction(async (tx) => {
           // 1. 클라이언트 생성
           const client = await tx.client.create({ data: clientDbDto });
@@ -29,6 +29,7 @@ export class ClientAdminsRepository {
           })
     
           return {
+            id: user.id,
             clientCode: client.clientCode
           };
         });

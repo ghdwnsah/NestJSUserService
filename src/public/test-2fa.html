@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>Test 2FA</title></head>
+<body>
+  <h1>Test Two-Factor Auth</h1>
+  <div>
+    <button id="getQrBtn">Generate QR Code</button>
+    <div id="qrSection" style="margin:20px 0;">
+      <!-- QR code will be inserted here -->
+    </div>
+  </div>
+  <form id="verifyForm">
+    <label>OTP Code: <input type="text" name="code" maxlength="6"/></label>
+    <button type="submit">Verify OTP</button>
+  </form>
+  <pre id="result"></pre>
+
+  <script>
+    const qrSection = document.getElementById('qrSection');
+    const resultPre = document.getElementById('result');
+    const token = localStorage.getItem('tempToken'); 
+    // 미리 로그인 API를 통해 token을 발급받아 저장했다고 가정
+
+    document.getElementById('getQrBtn').onclick = async () => {
+      const res = await fetch('/auth/2fa/qrcode', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      const data = await res.json();
+      if (data.qrDataUrl) {
+        qrSection.innerHTML = `<img src="${data.qrDataUrl}" alt="QR Code"/>`;
+      } else {
+        qrSection.textContent = 'Failed to load QR';
+      }
+    };
+
+    document.getElementById('verifyForm').onsubmit = async (e) => {
+      e.preventDefault();
+      const code = e.target.elements.code.value;
+      const res = await fetch('/auth/2fa/enable', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + token,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ code })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        resultPre.textContent = 'Success: ' + JSON.stringify(data);
+      } else {
+        resultPre.textContent = 'Error ' + res.status + ': ' + (await res.text());
+      }
+    };
+  </script>
+</body>
+</html>

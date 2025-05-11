@@ -21,6 +21,7 @@ export class VerifyAndLoginUseCase {
             name: user.name,
             email: user.email,
             clientId: user.clientId,
+            isTwoFactorEnabled: user.isTwoFactorEnabled,
         }, ip);
     }
 }

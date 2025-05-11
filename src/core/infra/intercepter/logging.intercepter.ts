@@ -10,7 +10,7 @@ export class LoggingInterceptor implements NestInterceptor {
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
 	const {method, url, body,} = context.getArgByIndex(0);
-    this.logger.log(`Request to ${method} ${url}`);
+    this.logger.debug(`Request to ${method} ${url} \n request: ${JSON.stringify(body)}`);
     this.logger.verbose('Before...');
 
     const now = Date.now();
@@ -18,7 +18,7 @@ export class LoggingInterceptor implements NestInterceptor {
       .handle()
       .pipe(
         tap(()=> this.logger.verbose(`After... ${Date.now() - now}ms`)),
-        tap(data => this.logger.debug(`Request to ${method} ${url} \n response: ${JSON.stringify(data)}`)), //3
+        tap(data => this.logger.debug(`Request to ${method} ${url} \n response: ${JSON.stringify(data)}`)),
       );
   }
 }

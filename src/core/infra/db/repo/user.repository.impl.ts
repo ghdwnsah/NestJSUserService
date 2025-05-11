@@ -1,14 +1,16 @@
 import { PrismaService } from "@/core/infra/db/prisma.service";
 // import { CreateClientDbDto } from "@/users/interface/dto/create-client-db.dto";
-import { CreateUserDbDto } from "@/core/interface/dto/create-user-db.dto";
+import { CreateUserDbModel } from "@/core/domain/db/create-user-db.model";
 import { Prisma, User } from '@prisma/client';
 import { Injectable } from "@nestjs/common";
 import { IUserRepositoryForEmail } from "@/email/domain/repository/iUser.repository";
 import { iUserRepositoryForClientAdmins } from "@/client-admins/infra/adapter/iUser.repository";
 import { IUserRepoForCore } from "../../adapter/iUser.repository";
 import { IUserRepositoryForAuth } from "@/auth/infra/adaper/iUser.repository";
-import { GetClientUserInfoQueryResponse } from "@/client-admins/interface/reponse/get-clientUserInfoQuery.response";
+import { GetClientUserInfoQueryResponse } from "@/client-admins/interface/response/get-clientUserInfoQuery.response";
 import { Role } from "@/core/common/roles/role.enum";
+import { UserWithClient } from "@/core/interface/types/userAndClient";
+import { CreateSocialUserDbModel } from "@/core/domain/db/create-socialUser-db.model";
 // import { IUserRepoForEmail } from "@/email/application/port/iUserRepo.service";
 // import { iUserRepositoryForClientAdmins } from "@/client-admins/application/ports/iUser.repository";
 // import { IUserRepositoryForCore } from "@/core/application/port/iUser.repository";
@@ -35,13 +37,38 @@ IUserRepositoryForAuth {
   //     }
   //   }
 
-  async createUser(userDbDto: CreateUserDbDto): Promise<User> {
+  async createUser(userDbDto: CreateUserDbModel): Promise<User> {
     return await this.prisma.user.create({ data: userDbDto });
   }
 
-  async createUserWithTransaction(tx: Prisma.TransactionClient, userDto: CreateUserDbDto): Promise<User> {
+  async createSocialUser(socialUserDbDto: CreateSocialUserDbModel): Promise<User> {
+    console.log('들어옴 4 : ');
+    return await this.prisma.user.create({ data: socialUserDbDto });
+  }
+
+  async createUserWithTransaction(tx: Prisma.TransactionClient, userDto: CreateUserDbModel): Promise<User> {
     return await tx.user.create({
       data: userDto,
+    });
+  }
+
+  async registerTrustedDevice(device) {
+    await this.prisma.trustedDevice.create({
+      data: device,
+    });
+  }  
+
+  async setTwoFactorSecret(id: string, twoFactorSecret: string): Promise<User> {
+    return this.prisma.user.update({ 
+      where: { id },
+      data: { twoFactorSecret },
+    });
+  }
+
+  async setIsTwoFactorAuth(id: string, value: boolean): Promise<User> {
+    return this.prisma.user.update({ 
+      where: { id },
+      data: { isTwoFactorEnabled: value },
     });
   }
 
@@ -137,8 +164,12 @@ IUserRepositoryForAuth {
     return await this.prisma.user.findFirst({ where: { id, clientId } });
   }
 
-  async findUserByEmail(email: string): Promise<User> {
-    return await this.prisma.user.findFirst({ where: {email} });
+  async findUserByEmail(email: string): Promise<UserWithClient> {
+    return await this.prisma.user.findFirst({ 
+      where: {email}, 
+      include: {
+        client: true,
+    }, });
   }
 
   async findUserBySignupVerifyToken(signupVerifyToken: string): Promise<User> {

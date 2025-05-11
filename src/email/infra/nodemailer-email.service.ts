@@ -87,21 +87,26 @@ export class NodemailerEmailService {
     to: string,
     userName: string,
     suspiciousIp: string,
+    resetToken: string,
+    expireMinutes: number,
+    locationText?: string,
   ) {
+    const baseUrl = 'https://localhost:3000/users/auth';
+    const resetUrl = `${baseUrl}/reset-password/page?token=${resetToken}`;
     const mailOptions = {
       to,
       subject: '🔒 보안 경고: 의심스러운 IP 접근 감지',
       html: `
-            <h3>${userName}님, 안녕하세요.</h3>
-            <p>새로운 IP 주소에서 로그인 시도가 감지되었습니다:</p>
-            <p><strong>IP 주소:</strong> ${suspiciousIp}</p>
-            <br/>
-            <p>만약 본인이 시도한 것이 아니라면 즉시 비밀번호를 변경해주시고, 계정을 보호해주세요.</p>
-            <br/>
-            <p>항상 저희 서비스를 이용해 주셔서 감사합니다.</p>
-            <br/>
-            <p>- 유저 서비스 보안팀</p>
-          `,
+      <p>안녕하세요, ${userName}님.</p>
+      <p>귀하의 계정에서 아래와 같은 의심스러운 로그인 시도가 감지되었습니다:</p>
+      <ul>
+        <li><strong>IP 주소:</strong> ${suspiciousIp}</li>
+        <li><strong>위치:</strong> ${locationText || '정보 없음'}</li>
+        <li><strong>시간:</strong> ${new Date().toLocaleString()}</li>
+      </ul>
+      <p>본인이 아닌 경우 <a href="${resetUrl}">비밀번호 재설정</a>을 진행해 주세요.</p>
+      <p>해당 기능은 ${expireMinutes}분 간 유효합니다.</p>
+    `,
     };
 
     await this.transporter.sendMail(mailOptions);

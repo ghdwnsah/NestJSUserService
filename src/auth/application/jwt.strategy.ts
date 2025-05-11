@@ -9,6 +9,7 @@ import { Cache } from 'cache-manager';
 import { CustomCacheService } from '@/shared/cache/cache.service';
 import { Request } from 'express';
 import { TokenCachePayload } from '@/core/interface/cache/token.interface';
+import { Reflector } from '@nestjs/core';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
@@ -16,6 +17,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     configService: ConfigService,
     private readonly prisma: PrismaService,
     private readonly cacheService: CustomCacheService,
+    private reflector: Reflector,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -26,6 +28,11 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   }
 
   async validate(req: Request, payload: any) {
+    if (!req['token']) {
+      console.warn('Token not found in request'); 
+      throw new UnauthorizedException('Invalid token payload');
+    }
+    console.log(`JwtStrategy req['token'] : `, req['token']);
     const authHeader = req.headers['authorization']; // ex) Bearer xxx.yyy.zzz
     const accessToken = authHeader?.split(' ')[1];
     console.log('payload : ', payload);
@@ -73,6 +80,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       name: userInfoDb.name,
       email: userInfoDb.email,
       clientId: userInfoDb.clientId,
+      isTwoFactorEnabled: userInfoDb.isTwoFactorEnabled,
       ip,
       issuedAt: Date.now(),
     } 
@@ -86,6 +94,6 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     
     console.log('User loaded from database and cached, user : ', userInfoDb);
 
-    return userInfoDb;
+    return saveCacheValue;
   }
 }

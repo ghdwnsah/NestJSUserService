@@ -3,4 +3,5 @@ export interface UserInfo {
     name: string;
     email: string;
     clientId: string;
+    isTwoFactorEnabled: boolean;
 }

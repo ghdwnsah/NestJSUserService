@@ -1,4 +1,4 @@
-import { CreateClientAdminUserResponse } from "@/client-admins/interface/reponse/createClientAdminUser.response";
+import { CreateClientAdminUserResponse } from "@/client-admins/interface/response/createClientAdminUser.response";
 import { User } from "@prisma/client";
 
 export interface iClientAdminsServiceForClientAdmins {

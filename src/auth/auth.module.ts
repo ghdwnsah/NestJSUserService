@@ -1,10 +1,10 @@
-import { Logger, Module } from '@nestjs/common';
+import { Logger, MiddlewareConsumer, Module } from '@nestjs/common';
 import { AuthService } from './application/auth.service';
 import authConfig from '@/core/common/config/authConfig';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
-import { JwtStrategy } from './jwt.strategy';
+import { JwtStrategy } from './application/jwt.strategy';
 import { PrismaModule } from '@/core/infra/db/prisma.module';
 import { VerifyAndLoginUseCase } from './verifyAndLogin.usecase';
 import { UserRepository } from '@/core/infra/db/repo/user.repository.impl';
@@ -20,6 +20,14 @@ import { UpdateRefreshAccessTokenHandler } from './application/command/update-re
 import { ClientRepository } from '@/core/infra/db/repo/client.repository';
 import { SlackService } from '@/shared/slack/slack.service';
 import { NodemailerEmailService } from '@/email/infra/nodemailer-email.service';
+import { GoogleStrategy } from './application/google.strategy';
+import { GoogleSocialCreateOrLoginHandler } from './application/command/google_socialCreateOrLogin.handler';
+import { TwoFactorAuthService } from './application/twoFactorAuth.service';
+import { AccessTokenMiddleware } from '@/shared/middleware/access-token.middleware';
+import { VerifyGenerateTwoFactorQrHandler } from './application/command/verify_generateTwoFactorQr.handler';
+import { Login2faTrustedDeviceRegHandler } from './application/command/login_2faTrustedDeviceReg.handler';
+import { DeviceTokenMiddleware } from '@/shared/middleware/device-token.middleware';
+import { VerifyTwoFactorOtpHandler } from './application/command/verify_twoFactorOtp.handler';
 
 
 const CommandHandlers = [
@@ -28,7 +36,16 @@ const CommandHandlers = [
     UpdateResetPasswordRequestHandler,
     UpdateResetPasswordConfirmHandler,
     UpdateRefreshAccessTokenHandler,
+    GoogleSocialCreateOrLoginHandler,
+    VerifyGenerateTwoFactorQrHandler,
+    Login2faTrustedDeviceRegHandler,
+    VerifyTwoFactorOtpHandler,
   ];
+
+const StrategyHandlers = [
+    JwtStrategy,
+    GoogleStrategy,
+];
 
 @Module({
     imports: [
@@ -55,10 +72,11 @@ const CommandHandlers = [
     providers: [
         Logger,
         AuthService, 
-        JwtStrategy,
+        ...StrategyHandlers,
         CustomCacheService,
         SlackService,
         NodemailerEmailService,
+        TwoFactorAuthService,
         { provide: 'UserRepository', useClass: UserRepository },
         { provide: 'ClientRepository', useClass: ClientRepository },
         { provide: 'RefreshTokenRepository', useClass: RefreshTokenRepository },
@@ -69,4 +87,10 @@ const CommandHandlers = [
         JwtModule
     ],
 })
-export class AuthModule {}
+export class AuthModule {
+    configure(consumer: MiddlewareConsumer) {
+            consumer
+              .apply(AccessTokenMiddleware, DeviceTokenMiddleware)
+              .forRoutes('*');
+          }
+}

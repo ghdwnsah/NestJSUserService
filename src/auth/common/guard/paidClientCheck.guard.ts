@@ -1,7 +1,7 @@
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException, Inject } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
-import { IClientRepoForAuth } from '../adaper/iClient.repository';
+import { IClientRepoForAuth } from '../../infra/adaper/iClient.repository';
 import { AuthenticatedRequest } from '@/auth/interface/types/authenticated-request';
 
 // TODO : 슈퍼 어드민 용 통과 만들기

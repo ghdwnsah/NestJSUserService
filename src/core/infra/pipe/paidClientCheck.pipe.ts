@@ -26,6 +26,7 @@ export class PaidClientCheckPipe implements PipeTransform<UserInfo, Promise<User
         name: user.name,
         email: user.email,
         clientId: user.clientId,
+        isTwoFactorEnabled: user.isTwoFactorEnabled,
     }; // 결제 완료된 유저만 통과
   }
 }

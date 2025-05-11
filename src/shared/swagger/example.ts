@@ -34,5 +34,9 @@ export const EXAMPLES = {
         value: "홍컴퍼니",
         desc: "회사명"
       },
+      code: {
+        value: "CL-AA...",
+        desc: "회사 고유 코드"
+      },
     }
 };

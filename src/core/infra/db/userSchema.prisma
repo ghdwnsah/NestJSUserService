@@ -8,12 +8,15 @@ model User {
   id                    String @id
   name                  String @db.VarChar(30)
   email                 String @unique @db.VarChar(60)
-  password              String @db.VarChar(60)
+  password              String? @db.VarChar(60)
   signupVerifyToken     String @db.VarChar(60)
   verified              Boolean @default(false)
   createdAt             DateTime @default(now())
   role                  Role
   refreshTokens         RefreshToken[]
+  trustedDevices        TrustedDevice[]
+  twoFactorSecret       String?
+  isTwoFactorEnabled    Boolean @default(false)
   clientId              String?     // FK
   resetPasswordToken    String?
   resetPasswordExpires  DateTime?

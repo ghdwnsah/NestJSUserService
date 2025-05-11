@@ -10,6 +10,7 @@ const getUserTokenPrefix = (userId: string | number) => `user:${userId}:token`;
 
 const getUserAccessTokenPrefix = (userId: string | number) => `${getUserTokenPrefix(userId)}:access`;
 const getUserRefreshTokenPrefix = (userId: string | number) => `${getUserTokenPrefix(userId)}:refresh`;
+const getUserDeviceTokenPrefix = (userId: string | number) => `${getUserTokenPrefix(userId)}:device`;
 const getUserBlacklistTokenPrefix = (userId: string | number) => `${getUserTokenPrefix(userId)}:blacklist`;
 
 @Injectable()
@@ -45,9 +46,16 @@ export class CustomCacheService {
         const prefix = getUserRefreshTokenPrefix(userId);
         await this.cacheManager.set(`${prefix}:${jwtString}`, value, ttl ? ttl : this.config.refreshTokenCacheExpiresIn );
     }
-    async setUserAllTokenCache (userId: string, accessToken: string, refreshToken: string, value: any, ttl?: number) {   
+    async setUserDeviceTokenCache (userId: string, jwtString: string, value: any, ttl?: number) {
+        const prefix = getUserDeviceTokenPrefix(userId);
+        await this.cacheManager.set(`${prefix}:${jwtString}`, value, ttl ? ttl : this.config.refreshTokenCacheExpiresIn );
+    }
+    async setUserAllTokenCache (userId: string, accessToken: string, refreshToken: string, value: any, deviceToken?: string, ttl?: number) {   
         await this.setUserAccessTokenCache(userId, accessToken, value);
         await this.setUserRefreshTokenCache(userId, refreshToken, value);
+        if(deviceToken) {
+            await this.setUserDeviceTokenCache(userId, deviceToken, value);
+        }
     }
 
     async setUserAccessTokenBlacklistCache(userId: string) {

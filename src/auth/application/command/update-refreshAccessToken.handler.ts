@@ -70,6 +70,7 @@ export class UpdateRefreshAccessTokenHandler implements ICommandHandler<UpdateRe
             name: user.name,
             email: user.email,
             clientId: user.clientId,
+            isTwoFactorEnabled: user.isTwoFactorEnabled,
             ip,
             issuedAt: Date.now(),
         };
