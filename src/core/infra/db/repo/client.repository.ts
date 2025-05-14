@@ -25,7 +25,7 @@ export class ClientRepository {
     return await this.prisma.client.findUnique({ where: { id } });
   }
 
-  async updateClient(id: string, data: any) {
+  async updateClient(id: string, data: any): Promise<Client> {
     return await this.prisma.client.update({ where: { id }, data });
   }
 

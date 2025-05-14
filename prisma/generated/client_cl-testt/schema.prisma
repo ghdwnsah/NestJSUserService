@@ -1,0 +1,88 @@
+// 🔹 baseSchema.prisma
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL_CLIENTCREATE_CL_TESTT")
+}
+
+// 🔹 clientSchema.prisma
+model Client {
+  id          String  @id @default(uuid())
+  name        String?
+  clientCode  String  @unique
+  isPaid      Boolean @default(false)
+  dbUrl       String?
+  dbName      String?
+  isDbCreated Boolean @default(false)
+  users       User[]  @relation("Clients")
+}
+
+// 🔹 userSchema.prisma
+enum Role {
+  SuperAdmin
+  ClientAdmin
+  ClientUser
+}
+
+model User {
+  id                   String          @id
+  name                 String          @db.VarChar(30)
+  email                String          @unique @db.VarChar(60)
+  password             String?         @db.VarChar(60)
+  signupVerifyToken    String          @db.VarChar(60)
+  verified             Boolean         @default(false)
+  createdAt            DateTime        @default(now())
+  role                 Role
+  refreshTokens        RefreshToken[]
+  trustedDevices       TrustedDevice[]
+  twoFactorSecret      String?
+  isTwoFactorEnabled   Boolean         @default(false)
+  clientId             String? // FK
+  resetPasswordToken   String?
+  resetPasswordExpires DateTime?
+  client               Client?         @relation(fields: [clientId], references: [id], name: "Clients")
+}
+
+// 🔹 refreshtokenSchema.prisma
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isValid   Boolean  @default(true)
+  ip        String? // 탈취 감지용 IP 저장
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+}
+
+// 🔹 trustedDevices.prisma
+model TrustedDevice {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deviceToken String   @unique
+  deviceName  String?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime
+
+  @@index([userId])
+}
+
+// 🔹 ipDenylist.prisma
+model IpDenylist {
+  ip        String   @id
+  reason    String
+  createdAt DateTime @default(now())
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated/client_cl-testt"
+}

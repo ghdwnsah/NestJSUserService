@@ -7,11 +7,12 @@ import { Redis } from 'ioredis';
 import { TokenCachePayload } from "@/core/interface/cache/token.interface";
 
 const getUserTokenPrefix = (userId: string | number) => `user:${userId}:token`;
-
 const getUserAccessTokenPrefix = (userId: string | number) => `${getUserTokenPrefix(userId)}:access`;
 const getUserRefreshTokenPrefix = (userId: string | number) => `${getUserTokenPrefix(userId)}:refresh`;
 const getUserDeviceTokenPrefix = (userId: string | number) => `${getUserTokenPrefix(userId)}:device`;
 const getUserBlacklistTokenPrefix = (userId: string | number) => `${getUserTokenPrefix(userId)}:blacklist`;
+
+const getTenantDbUrlPrefix = (clientCode: string) => `tenant:${clientCode}:dbUrl`;
 
 @Injectable()
 export class CustomCacheService {
@@ -37,6 +38,10 @@ export class CustomCacheService {
         if(isBlacklist) return true;
         else return false;
     }
+    async getTenantClientDbUrlCache(clientCode: string): Promise<string> {
+        const prefix = getTenantDbUrlPrefix(clientCode);
+        return await this.cacheManager.get<string>(prefix);
+    }
 
     async setUserAccessTokenCache (userId: string, jwtString: string, value: any, ttl?: number) {
         const prefix = getUserAccessTokenPrefix(userId);
@@ -57,7 +62,6 @@ export class CustomCacheService {
             await this.setUserDeviceTokenCache(userId, deviceToken, value);
         }
     }
-
     async setUserAccessTokenBlacklistCache(userId: string) {
         const prefix = getUserAccessTokenPrefix(userId);
         let cursor = '0';
@@ -81,6 +85,10 @@ export class CustomCacheService {
                 }   
             }
         } while (cursor !== '0');
+    }
+    async setTenantClientDbUrlCache(clientCode: string, dbUrl: string) {
+        const prefix = getTenantDbUrlPrefix(clientCode);
+        await this.cacheManager.set(prefix, dbUrl, this.config.tenantClientDbUrlCacheExpiresIn); 
     }
 
     async clearAccessCache(userId: string, jwtString: string) {

@@ -8,28 +8,31 @@ export class HttpExceptionFilter implements ExceptionFilter {
         // private readonly logger: Logger,
     ) {}
 
-  catch(exception: Error, host: ArgumentsHost) {
-    const ctx = host.switchToHttp();
-    const res = ctx.getResponse<Response>();
-    const req = ctx.getRequest<Request>();
+  catch(exception: unknown, host: ArgumentsHost) {
+  const ctx = host.switchToHttp();
+  const res = ctx.getResponse<Response>();
+  const req = ctx.getRequest<Request>();
 
-    if (!(exception instanceof HttpException)) { 
-      exception = new InternalServerErrorException();
-    }
+  let status = 500;
+  let responseBody: any = { message: 'Internal Server Error' };
+  let stack = (exception as any)?.stack;
 
-    const response = (exception as HttpException).getResponse();
-
-    const stack = exception.stack;
-    const log = {
-		timestamp: new Date(),
-		url: req.url,
-		response,
-		stack,
-	}
-	this.logger.log(log);
-
-    res
-    .status((exception as HttpException).getStatus())
-    .json(response)
+  if (exception instanceof HttpException) {
+    status = exception.getStatus();
+    responseBody = exception.getResponse();
+  } else {
+    this.logger.error('Unexpected error', stack);
   }
+
+  const locationLine = stack?.split('\n')[1]?.trim();
+
+  this.logger.error(
+    `\n[${req.method}] ${req.url} - ${status}\n` +
+    `❗Message: ${JSON.stringify(responseBody)}\n` +
+    `❗Location: ${locationLine}\n` +
+    `❗Stack:\n${stack}`
+  );
+
+  res.status(status).json(responseBody);
+}
 }

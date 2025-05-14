@@ -1,4 +1,4 @@
-import { Logger, Module } from '@nestjs/common';
+import { Logger, MiddlewareConsumer, Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { EmailModule } from './email/email.module';
@@ -26,6 +26,7 @@ import { CustomCacheModule } from './shared/cache/cache.module';
 import { LoggingModule } from './core/infra/logging.module';
 import { SlackModule } from './shared/slack/slack.module';
 import { NotificationModule } from './noti/notification.module';
+import { TenantMiddleware } from './tenant/tenant.middleware';
 
 @Module({
   imports: [
@@ -96,4 +97,8 @@ import { NotificationModule } from './noti/notification.module';
     Logger,
   ],
 })
-export class AppModule {}
+export class AppModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(TenantMiddleware).forRoutes('*');
+  }
+}

@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE `Client` MODIFY `name` VARCHAR(191) NULL,
+    MODIFY `dbUrl` VARCHAR(191) NULL,
+    MODIFY `dbName` VARCHAR(191) NULL;

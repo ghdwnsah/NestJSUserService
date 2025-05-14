@@ -11,6 +11,9 @@ import { GetClientUserInfoHandler } from "./application/query/get-clientUserInfo
 import { PaidClientCheckPipe } from "@/core/infra/pipe/paidClientCheck.pipe";
 import { ClientRepository } from "@/core/infra/db/repo/client.repository";
 import { AccessTokenMiddleware } from "@/shared/middleware/access-token.middleware";
+import { TenantModule } from "@/tenant/tenant.module";
+import { TenantMiddleware } from "@/tenant/tenant.middleware";
+import { TenantUserRepository } from "@/core/infra/db/repo/tenant-user.repository";
 
 
 @Module({
@@ -19,6 +22,7 @@ import { AccessTokenMiddleware } from "@/shared/middleware/access-token.middlewa
 
         // outside
         CqrsModule,
+        TenantModule,
 
         // core
         PrismaModule,
@@ -37,6 +41,7 @@ import { AccessTokenMiddleware } from "@/shared/middleware/access-token.middlewa
         // core
         {provide: 'UserRepository', useClass: UserRepository},
         {provide: 'ClientRepository', useClass: ClientRepository},
+        TenantUserRepository,
         UserEventsHandler,
         PaidClientCheckPipe,
     ],
@@ -46,6 +51,6 @@ export class ClientAdminsModule {
     configure(consumer: MiddlewareConsumer) {
         consumer
           .apply(AccessTokenMiddleware)
-          .forRoutes('users/client-admins', 'users/client-admins/*');
+          .forRoutes('*');
       }
 }

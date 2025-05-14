@@ -1,7 +1,7 @@
 import { PrismaService } from "@/core/infra/db/prisma.service";
 // import { CreateClientDbDto } from "@/users/interface/dto/create-client-db.dto";
 import { CreateUserDbModel } from "@/core/domain/db/create-user-db.model";
-import { Prisma, User } from '@prisma/client';
+import { Prisma, PrismaClient, User } from '@prisma/client';
 import { Injectable } from "@nestjs/common";
 import { IUserRepositoryForEmail } from "@/email/domain/repository/iUser.repository";
 import { iUserRepositoryForClientAdmins } from "@/client-admins/infra/adapter/iUser.repository";
@@ -39,6 +39,10 @@ IUserRepositoryForAuth {
 
   async createUser(userDbDto: CreateUserDbModel): Promise<User> {
     return await this.prisma.user.create({ data: userDbDto });
+  }
+
+  async createClientAdminUser(userDbDto: CreateUserDbModel, tenantPrisma: PrismaClient): Promise<User> {
+    return await tenantPrisma.user.create({ data: userDbDto });
   }
 
   async createSocialUser(socialUserDbDto: CreateSocialUserDbModel): Promise<User> {

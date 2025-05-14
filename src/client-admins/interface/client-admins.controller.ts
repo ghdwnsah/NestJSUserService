@@ -1,7 +1,7 @@
 import { Role } from "@/core/common/roles/role.enum";
 import { Roles } from "@/core/common/roles/roles.decorator";
 
-import { Body, Controller, Get, Inject, Logger, LoggerService, Param, Post, UseGuards, UsePipes } from "@nestjs/common";
+import { Body, Controller, Get, Inject, Logger, LoggerService, Param, Post, Req, UseGuards, UsePipes } from "@nestjs/common";
 import { CreateClientAdminUserDto } from "./dto/create-client-admin.dto";
 import { CreateClientAdminUserResponse } from "./response/createClientAdminUser.response";
 import { JwtAuthGuard } from "@/auth/common/guard/jwt-auth.guard";
@@ -36,16 +36,18 @@ export class ClientAdminsController {
     @ApiDefaultResponses()
     @Public()
     @Post()
-    async createClientAdmin(@Body() createClientUserDto: CreateClientAdminUserDto): Promise<CreateClientAdminUserResponse> {
+    async createClientAdmin(@Req() req, @Body() createClientUserDto: CreateClientAdminUserDto): Promise<CreateClientAdminUserResponse> {
         this.printWinstonLog(createClientUserDto);
+        this.printWinstonLog(req.tenantId);
         const clientAdminInfo = {
             name: createClientUserDto.name,
             email: createClientUserDto.email,
             password: createClientUserDto.password,
+            clientCode: req.tenantId,
             clientName: createClientUserDto.clientName,
         };
 
-        const command = new CreateClientAdminUserCommand(clientAdminInfo.name, clientAdminInfo.email, clientAdminInfo.password, clientAdminInfo.clientName);
+        const command = new CreateClientAdminUserCommand(clientAdminInfo.name, clientAdminInfo.email, clientAdminInfo.password, clientAdminInfo.clientCode, clientAdminInfo.clientName);
         return this.commandBus.execute(command);
     }
 
