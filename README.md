@@ -1,11 +1,11 @@
 # NestJS 기반 유저 서비스
 
 ## 🧩 프로젝트 소개
-NestJS 기반 유저 서비스는 멀티 테넌트 환경을 지원하는 백엔드 애플리케이션으로, 사용자 인증과 테넌트 관리 기능을 제공합니다. NestJS의 CQRS 패턴과 DDD 아키텍처를 적용하여 확장성과 유지보수성을 높였으며, Prisma ORM을 통해 MySQL 데이터베이스를 다루고 있습니다. 또한 Redis 캐시, 인 메모리 캐시를 활용하여 성능을 최적화한 것이 특징입니다.
+NestJS 기반 유저 서비스는 SaaS(Software as a Service) 형태를 지원하는 백엔드 애플리케이션으로, 멀티 테넌트 환경에서 사용자 인증과 테넌트 관리 기능을 제공합니다. NestJS의 CQRS 패턴과 DDD 아키텍처를 적용하여 확장성과 유지보수성을 높였으며, Prisma ORM을 통해 MySQL 데이터베이스를 다루고 있습니다. 또한 Redis 캐시, 인 메모리 캐시를 활용하여 성능을 최적화한 것이 특징입니다.NestJS 기반 유저 서비스는 멀티 테넌트 환경을 지원하는 백엔드 애플리케이션으로, 사용자 인증과 테넌트 관리 기능을 제공합니다. NestJS의 CQRS 패턴과 DDD 아키텍처를 적용하여 확장성과 유지보수성을 높였으며, Prisma ORM을 통해 MySQL 데이터베이스를 다루고 있습니다. 또한 Redis 캐시, 인 메모리 캐시를 활용하여 성능을 최적화한 것이 특징입니다.
 
 ## 🔨 주요 기술 스택
 - **프레임워크**: NestJS (TypeScript)
-- **데이터베이스**: MySQL (멀티 테넌트 구조), Prisma ORM
+- **데이터베이스**: PostgreSQL (멀티 테넌트 구조), Prisma ORM
 - **패턴**: CQRS, DDD, Clean Architecture
 - **캐싱**: In-memory Cache + Redis
 - **인증**: JWT, Passport
@@ -34,8 +34,8 @@ npm run start:dev
 
 ## 🧠 핵심 아키텍처 요약
 - CQRS 패턴: 명령(Command)과 조회(Query) 책임 분리
-- 멀티 테넌시: 테넌트별 별도 DB 생성 및 마이그레이션, Prisma Client 캐싱
-- 클린 아키텍처: Application, Domain, Infrastructure 등 계층화
+- 멀티 테넌시: 테넌트별 별도 DB 생성 및 Prisma Client 캐싱
+- 클린 아키텍처: Application, Domain, Infrastructure 계층화
 - 의존성 역전: Repository 인터페이스 분리 및 DI
 - 캐싱 전략: NestJS Memory Cache + Redis 캐시 병행 사용
 
