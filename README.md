@@ -1,126 +1,195 @@
-# NestJS 기반 유저 서비스
+# NestJS 기반 유저 서비스 포트폴리오
 
-## 🧩 프로젝트 소개
-NestJS 기반 유저 서비스는 SaaS(Software as a Service) 형태를 지원하는 백엔드 애플리케이션으로, 멀티 테넌트 환경에서 사용자 인증과 테넌트 관리 기능을 제공합니다. NestJS의 CQRS 패턴과 DDD 아키텍처를 적용하여 확장성과 유지보수성을 높였으며, Prisma ORM을 통해 MySQL 데이터베이스를 다루고 있습니다. 또한 Redis 캐시, 인 메모리 캐시를 활용하여 성능을 최적화한 것이 특징입니다.NestJS 기반 유저 서비스는 멀티 테넌트 환경을 지원하는 백엔드 애플리케이션으로, 사용자 인증과 테넌트 관리 기능을 제공합니다. NestJS의 CQRS 패턴과 DDD 아키텍처를 적용하여 확장성과 유지보수성을 높였으며, Prisma ORM을 통해 MySQL 데이터베이스를 다루고 있습니다. 또한 Redis 캐시, 인 메모리 캐시를 활용하여 성능을 최적화한 것이 특징입니다.
+## 🧩 프로젝트 개요
+NestJS 기반 유저 서비스는 SaaS(Software as a Service) 형태를 지원하는 백엔드 애플리케이션으로, 다양한 고객(테넌트)에게 독립된 데이터베이스 환경을 제공하는 멀티 테넌시 아키텍처를 핵심으로 설계되었습니다.
 
-## 🔨 주요 기술 스택
-- **프레임워크**: NestJS (TypeScript)
-- **데이터베이스**: PostgreSQL (멀티 테넌트 구조), Prisma ORM
-- **패턴**: CQRS, DDD, Clean Architecture
-- **캐싱**: In-memory Cache + Redis
-- **인증**: JWT, Passport
-- **테스트**: Jest
-- **DevOps**: Docker (선택적)
+본 프로젝트는 단순한 유저 CRUD를 넘어, 다음과 같은 고급 아키텍처 설계 및 보안 구조를 직접 구현하는 데에 중점을 두었습니다:
 
-## 🚀 설치 및 실행
+---
+
+## 🔧 기술 스택
+
+| 분류 | 사용 기술 | 활용 및 목적 |
+| --- | --- | --- |
+| Language | TypeScript | NestJS 전반에서 정적 타입 안정성 확보 |
+| Framework | NestJS (v10) | 모듈화, DI, Guards, Pipes, Interceptors 적용 |
+| ORM | Prisma ORM | 테넌트별 동적 PrismaClient 관리 및 스키마 기반 DB 추상화 |
+| Database | MySQL | 각 테넌트별 물리 DB 분리(Database-per-Tenant 패턴) |
+| 인증/보안 | JWT, Passport, Google OAuth2, 2FA, IP 차단 | JWT 인증, Google 로그인, TOTP 기반 2단계 인증, 보안 필터링 강화 |
+| 권한 제어 | RBAC + PBAC (with Guard/Decorator) | `@Roles()`, `@Permissions()` 기반 접근 제어. 향후 CASL 전환 예정 |
+| Cache | Redis + In-memory Cache | 2단계 캐싱 전략으로 응답 속도 최적화 및 자원 절약 |
+| 아키텍처 | CQRS, DDD, Clean Architecture | 명령/조회 분리, 도메인 중심 계층화, 책임 단일화 실현 |
+| 문서화 | Swagger (`@nestjs/swagger`) | API 문서 자동화 적용 중 |
+| 테스트 | Jest, `@nestjs/testing` | 유닛/통합 테스트 환경 구성 및 DI 기반 테스트 가능 |
+| DevOps | Docker, Docker Compose | 로컬/운영 환경 격리 및 컨테이너 기반 실행 환경 구현 |
+
+---
+
+## 🧠 시스템 아키텍처 개요
+
+### 핵심 구성 흐름
+
+```
+[ Client ]
+     |
+     v
+[ Controller (REST) ]
+     |
+     v
+[ CQRS: Command / Query Handler ]
+     |
+     v
+[ Domain Service ]
+     |
+     v
+[ PrismaClientManager ] ← Uses → [ Redis / Memory Cache ]
+     |
+     v
+[ Multi-Tenant DBs (per tenant) ]
+```
+
+### 시스템 특성 요약
+
+- **CQRS 기반**: 명령/조회 책임 분리로 복잡도 제어 및 성능 분산
+- **PrismaClientManager**: 테넌트 ID 기반 Prisma 인스턴스 동적 생성 및 캐싱
+- **2단계 캐시 전략**: 메모리 → Redis 순으로 조회 최적화
+- **Guard/Decorator 중심 권한 제어**: RBAC + PBAC 혼합 패턴 적용
+- **소셜 로그인/2FA/IP 차단 등 보안 강화 요소 포함**
+
+---
+
+## 🏆 주요 성과 요약
+
+| 항목 | 내용 |
+| --- | --- |
+| SaaS 구조 설계 | 테넌트 생성 시 별도 DB 생성, 데이터 완전 격리, Prisma 기반 유연한 연결 구조 구현 |
+| 인증 보안 기능 | JWT, 소셜 로그인(Google), 2FA(TOTP), 디바이스 인증, IP 차단 구현 완료 |
+| 권한 구조 | `@Roles()` + `@Permissions()` 기반 접근 제어, 향후 CASL 도입으로 ABAC 확장 계획 포함 |
+| 캐시 최적화 | In-memory + Redis 조합으로 API 응답 속도 개선 및 부하 분산 실현 |
+| 설계 철학 | DDD와 클린 아키텍처 기반 계층 설계로 유지보수성과 테스트 용이성 확보 |
+| 개발 운영 전환 | Docker 기반 통합 실행 환경 구성으로 로컬/운영 환경 통일 |
+
+---
+
+## 🧱 구조적 설계 특징
+
+### ✅ CQRS 적용
+
+- 명령(Command)과 조회(Query)를 완전 분리
+- 복잡한 도메인 로직 분산 가능
+
+### ✅ 멀티 테넌시 SaaS 구조
+
+- 테넌트마다 고유 DB 할당 (Database-per-tenant)
+- PrismaClientManager로 연결 관리 및 캐싱
+
+### ✅ 클린 아키텍처
+
+- Application / Domain / Infrastructure 계층 분리
+- Repository 인터페이스 → 의존성 역전(DIP)
+- 테스트 및 유지보수 용이
+
+### ✅ 인증(Authentication)
+
+- **JWT 기반 인증**: Access / Refresh Token 분리, Refresh Token Rotation 구현
+- **소셜 로그인**: Google OAuth2 인증 구현 (`google.strategy.ts`)
+- **2FA (Two-Factor Authentication)**:
+    - TOTP 기반 Google Authenticator 연동
+    - QR 코드 생성 및 OTP 검증 흐름 구축 (`verify_generateTwoFactorQr.handler.ts`, `verify_twoFactorOtp.handler.ts`)
+- **디바이스 인증 및 세션 관리**:
+    - 기기 고유 토큰 발급 및 저장
+    - `TrustedDevice` 테이블로 신뢰 기기 목록 관리
+- **IP 차단 정책**:
+    - `ipDenyList` 테이블에 등록된 IP 요청 자동 차단
+    - 미들웨어 기반 차단 적용 가능
+- **토큰 재발급 흐름**:
+    - `update-refreshAccessToken.handler.ts`를 통한 Refresh → Access 재발급
+
+### ✅ 인가(Authorization)
+
+- **RBAC (Role-Based Access Control)**:
+    - `@Roles()` 커스텀 데코레이터 기반 역할 주입
+    - `roles.guard.ts`를 통한 역할 기반 API 접근 제어
+    - 지원 역할: `USER`, `ADMIN`, `SUPER_ADMIN`, `TENANT_ADMIN` 등
+- **PBAC (Permission-Based Access Control) 일부 포함**:
+    - `permissions.decorator.ts`, `permission.guard.ts` 등에서 세분화된 퍼미션 적용 구조 확인
+    - `permission.map.ts`를 기반으로 각 API 별 권한 분기 가능
+- **NestJS Guards 설계**
+    - `JwtAuthGuard`: 기본 토큰 검증
+    - `RolesGuard`: RBAC 제어
+    - `PermissionGuard`: 특정 리소스 접근 권한 확인
+    - `PaidClientCheckGuard`: 유료 고객 여부 기반 필터링 (도메인 로직 분리)
+- **Custom Decorator**
+    - `@User()`, `@Roles()`, `@Permissions()` 등 다수 커스텀 데코레이터 정의 및 활용
+    - 요청 컨텍스트 기반 사용자 주입 및 역할/퍼미션 확인 로직 분리
+
+### 보안 강화 요소
+
+- **ValidationPipe**: 모든 DTO 유효성 검사 강화 (`class-validator`)
+- **Helmet, CORS 설정**: 미들웨어에서 보안 헤더 및 출처 제한 설정
+- **Rate Limiting (향후 고려)**: 로그인 시도 제한 및 brute-force 공격 방어
+- **RBAC → CASL 전환 계획**
+
+## 🧠 포인트 요약
+
+> 본 프로젝트에서는 NestJS의 인증/인가 시스템을 커스터마이징하고, RBAC와 PBAC를 혼합한 실무 수준의 권한 제어 구조를 구현했습니다.
+> 
+> 
+> 특히 2FA, 소셜 로그인, 디바이스 토큰, IP 블락 등 **보안성과 사용자 경험을 모두 고려한 고급 인증 흐름**을 갖추고 있습니다.
+> 
+
+---
+
+## 📈 개선 예정 및 고도화 계획
+
+- [ ]  ⏸️ **CI/CD 자동화** *(보류 중)*
+    - GitHub Actions 기반 빌드/테스트/배포 파이프라인 구축 예정
+- [ ]  🟡 **테스트 커버리지 확대**
+    - 통합 테스트 및 Guard/Handler 단위 테스트 보강
+    - `@nestjs/testing` 기반 Mock 환경 구성
+- [ ]  🟡 **Swagger API 문서 완성**
+    - `@nestjs/swagger` 기반 문서화 자동화 예정
+- [ ]  🚧 **Kafka 기반 이벤트 처리 구조 설계 중**
+    - 인증/가입/로그인 이벤트 → 알림/로그 전송 비동기 처리 계획
+- [ ]  ⏸️ **K8s 배포 대응**
+    - Helm Chart 기반 환경 분리 및 ConfigMap 활용 계획
+- [ ]  🧩 **RBAC → CASL 전환 계획**
+    - 현재는 `RolesGuard`, `PermissionGuard` 조합으로 권한 제어
+    - 향후 `CASL` 기반 리소스 단위 권한 정책(Ability-based ACL)으로 확장 예정
+    - 예: `can("manage", "User")`와 같은 논리적 표현 활용 가능
+
+---
+
+## 🧪 실행 및 테스트
+
 ```bash
-# 1. 레포지토리 클론
-git clone https://github.com/your-repo/nestjs-user-service.git
-cd nestjs-user-service
-
-# 2. 환경변수 설정
+# 환경 설정
 cp .env.example .env
-# .env 파일에 DATABASE_URL, REDIS_HOST 등 설정
 
-# 3. 패키지 설치
+# 패키지 설치
 npm install
 
-# 4. Prisma 마이그레이션
+# DB 마이그레이션
 npx prisma migrate deploy
 
-# 5. 개발 서버 실행
+# 개발 서버 실행
 npm run start:dev
-```
 
-## 🧠 핵심 아키텍처 요약
-- CQRS 패턴: 명령(Command)과 조회(Query) 책임 분리
-- 멀티 테넌시: 테넌트별 별도 DB 생성 및 Prisma Client 캐싱
-- 클린 아키텍처: Application, Domain, Infrastructure 계층화
-- 의존성 역전: Repository 인터페이스 분리 및 DI
-- 캐싱 전략: NestJS Memory Cache + Redis 캐시 병행 사용
-
-## 📦 시스템 구조도
-![시스템 구조도](./docs/nestjsuserservice2.png)
-
-## 📋 주요 기능
-- 사용자 인증 (회원가입, 로그인, 토큰 갱신)
-- 사용자 관리 (프로필 조회/수정, 사용자 목록, 삭제 등)
-- 테넌트 관리 (신규 테넌트 생성, 목록/상세 조회, 삭제)
-- 역할/권한 기반 접근 제어
-- 데이터 격리 (테넌트별 DB 접근)
-- 캐싱 기반 고속 데이터 조회
-
-## 🧪 API 명세 (일부 예시)
-| 메소드 | 경로 | 설명 |
-|--------|------|------|
-| POST | /auth/signup | 회원가입 |
-| POST | /auth/login | 로그인 |
-| GET | /users/me | 내 정보 조회 |
-| GET | /users | (관리자) 사용자 목록 |
-| POST | /tenants | (슈퍼관리자) 테넌트 생성 |
-
-## 📘 ERD 개요 (논리적)
-```
-MasterDB
-└── Tenant (id, name, db_url)
-
-TenantDB (per tenant)
-└── User (id, email, name, role, ...)
-```
-> 각 테넌트는 독립된 DB를 사용하며, PrismaClientManager가 요청별 DB 연결을 관리합니다. 또한, 권한 분리가 되어 있어 접근 가능한 API 를 선택적으로 분리 가능합니다.
-
-## 🏗 시스템 아키텍처 다이어그램
-```
-Client
-  ↓
-Controller → (Command | Query Handler)
-  ↓                     ↓
-Domain Service       캐시 레이어 (Memory → Redis)
-  ↓                     ↓
-Repository (Prisma ORM)
-  ↓
-Tenant별 DB 연결
-```
-
-## 🧪 테스트
-```bash
+# 테스트
 npm run test
 ```
 
-## ⚙️ 추가 설정
-- `.env` 설정 (DATABASE_URL, JWT_SECRET, REDIS 관련)
-- Prisma schema, Tenant DB 생성 스크립트 필요 시 별도 제공
-- Swagger 또는 Postman으로 API 문서 제공 가능
+---
 
-## 🧱 보완 예정 항목
-- [ ] ⏸️ CI/CD 파이프라인 구축 *(작업 보류 중)*
-  - GitHub Actions로 lint/test/build 자동화
-  - Docker 이미지 빌드 및 도커허브 푸시
-  - 환경 분리 배포
+## 🙋🏻‍♂️ 기여도 및 참고
 
-- [ ] 🟡 테스트 커버리지 확대 *(예정됨)*
-  - 유닛/통합 테스트 강화
-  - 커버리지 리포트 CI 통합
+- 본 프로젝트는 개인 프로젝트로 모든 코드 및 구조 직접 설계 및 구현
+- NestJS, Prisma 공식 문서 및 한용재 저자의 NestJS로 배우는 백엔드 프로그래밍, 일부 GitHub 오픈소스 구조 참고
 
-- [ ] 🟡 Swagger 기반 API 문서 자동화 *(작업 대기 중)*
-  - `@nestjs/swagger` 적용
-  - 문서 자동 생성 및 배포
+---
 
-- [ ] ⏸️ Helm Chart 기반 K8s 배포 *(보류됨)*
-  - 환경별 `values.yaml` 구성
-  - ConfigMap 분리 및 인프라 정의
+## 🔗 관련 링크
 
-- [ ] 🚧 이벤트 기반 아키텍처 일부 적용 *(초기 설계 중)*
-  - Kafka/Redis PubSub 도입
-  - 도메인 이벤트 활용
-
-- [ ] 🟡 Observability 개선 *(계획됨)*
-  - Prometheus + Grafana 기반 모니터링
-  - 응답 시간, 쿼리 부하, 캐시 적중률 시각화
-
-- [x] ✅ 멀티 테넌시 DB 관리 자동화 *(구현 완료)*
-  - 테넌트 생성 시 전용 DB 자동 생성
-  - PrismaClient 인스턴스 자동 캐싱 및 마이그레이션 적용
-
-## 🪪 라이선스
-MIT License
+- GitHub: https://github.com/ghdwnsah/NestJSUserService
+- Swagger: `/api-docs` (작성 중)
+- 문의: ghdwwns@gmail.com
