@@ -14,7 +14,7 @@ import { CustomCacheService } from '@/shared/cache/cache.service';
     Logger,
   ],
   exports: [
-    'PRISMA_CLIENT',
+    // 'PRISMA_CLIENT',
     TenantPrismaService
   ],
 })

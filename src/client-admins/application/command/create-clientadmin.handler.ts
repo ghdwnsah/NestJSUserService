@@ -24,6 +24,10 @@ import { errorResponseClientBadRequest } from '@/shared/exceptions/http-exceptio
 import { ClientRepository } from '@/core/infra/db/repo/client.repository';
 import { iClientRepositoryForClientAdmins } from '@/client-admins/infra/adapter/iClient.repository';
 import { iUserRepositoryForClientAdmins } from '@/client-admins/infra/adapter/iUser.repository';
+import { encryptClientCode } from '@/core/common/utils/crypto';
+import { error } from 'console';
+
+import * as fs from 'fs';
 
 
 @Injectable()
@@ -32,11 +36,9 @@ export class CreateClientAdminUserHandler implements ICommandHandler<CreateClien
     constructor (
         private readonly rootPrisma: PrismaService,
 
-        private readonly clientAdminsRepository: ClientAdminsRepository,
         private readonly tenantUserRepository: TenantUserRepository,
-        @Inject('ClientRepository') private readonly clientRepository: iClientRepositoryForClientAdmins,
+        @Inject('ClientRepository') private readonly rootClientRepository: iClientRepositoryForClientAdmins,
         @Inject('UserRepository') private readonly userRepository: iUserRepositoryForClientAdmins,
-        private readonly tenantPrismaService: TenantPrismaService,
         private readonly eventBus: EventBus,
         private readonly configService: ConfigService,
         @Inject(Logger) private readonly logger: LoggerService,
@@ -61,7 +63,7 @@ export class CreateClientAdminUserHandler implements ICommandHandler<CreateClien
         }
         else if (!clientExists.isPaid) {
             this.logger.debug(`❌ 결제되지 않은 클라이언트 코드입니다: '${clientCode}'`);
-            errorResponseClientBadRequest(`클라이언트 사에 문제가 생겼으니 관리자에게 문의하세요.`);
+            errorResponseClientBadRequest(`해당 클라이언트에 문제가 생겼으니 관리자에게 문의하세요.`);
         }
 
         const dbName = `client_${clientCode.toLowerCase()}`; // ex> client_cl123abc
@@ -76,6 +78,13 @@ export class CreateClientAdminUserHandler implements ICommandHandler<CreateClien
         await this.registerEnvKey(clientCode);
 
         //마이그레이션 실행 (별 프로세스)
+        try {
+            await this.runPrismaMigrate(dbUrl, clientCode);
+        } catch (e) {
+            this.logger.error(e.message);
+            this.logger.debug(`❌ 마이그레이션 실패: \n'dbUrl: ${dbUrl}\nclientCode:${clientCode}'`);
+            errorResponseClientBadRequest(`서버에 문제가 생겼습니다. 관리자에게 문의하세요.`);
+        }
         await this.runPrismaMigrate(dbUrl, clientCode);
         console.log('마이그레이션 완료 : ', dbName);
 
@@ -103,24 +112,15 @@ export class CreateClientAdminUserHandler implements ICommandHandler<CreateClien
             name: updateClientDto.name,
             dbUrl: dbUrl,
             dbName: dbName,
-            // clientCode: clientCode,
         }
-        await this.clientRepository.updateClient(clientExists.id, updateClientDbDto);
-
-        
+        await this.rootClientRepository.updateClient(clientExists.id, updateClientDbDto);
         // const tenantClient = await this.tenantPrismaService.getPrismaClientByCode(clientCode);
 
-        this.eventBus.publish(new UserCreatedEvent(createUserDbDto.email, createUserDbDto.signupVerifyToken));
-        //TODO : 테넌트에 클라이언트 지우는 작업 후에 할 것
+        const encryptedClientCode = encryptClientCode(clientCode);
+        this.eventBus.publish(new UserCreatedEvent(createUserDbDto.email, encryptedClientCode, createUserDbDto.signupVerifyToken));
+        //TODO : 테넌트에 클라이언트 지우는 작업 후에 이 레거시 삭제 할 것
         await this.tenantUserRepository.createLegacyCompatibilityClientMeta(clientExists.clientCode, clientExists.id, updateClientDbDto);
-        // await tenantClient.client.create({ data: {
-        //     id: clientExists.id,
-        //     clientCode: clientExists.clientCode,
-        //     ...updateClientDbDto,
-        // } });
-        return await this.tenantUserRepository.createClientAdminUser(clientExists.clientCode, createUserDbDto);
-        // return await tenantClient.user.create({ data: createUserDbDto });
-        // return await this.userRepository.createClientAdminUser(createUserDbDto, tenantClient)
+        return await this.tenantUserRepository.createUser(clientExists.clientCode, createUserDbDto);
 	}
 
     // MySQL에서 DB 직접 생성
@@ -131,12 +131,28 @@ export class CreateClientAdminUserHandler implements ICommandHandler<CreateClien
             user: process.env.DATABASE_USERNAME,
             password: process.env.DATABASE_PASSWORD,
         });
+        const [rows] = await connection.query(
+            `SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = ?`,
+            [dbName]
+        );
+        if (rows.length > 0) {
+            await connection.end();
+            this.logger.debug(`❌ DB '${dbName}' already exists.`);
+            errorResponseClientBadRequest(`클라이언트 정보가 잘못되었습니다. 관리자에게 문의하세요.`);
+        }
+
         await connection.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\``);
         await connection.end();
     }
 
     private async runPrismaMigrate(dbUrl: string, clientCode: string) {
     return new Promise((resolve, reject) => {
+        const folderPath = path.resolve(__dirname, `../../../prisma/generated/client_${clientCode.toLowerCase()}`);
+        if (fs.existsSync(folderPath)) {
+            this.logger.debug(`❌ 폴더가 이미 존재합니다: ${folderPath}`);
+            return reject(new Error('폴더가 이미 존재합니다'));
+        }
+
         const child = spawn('npm', ['run', 'migrate'], {
         env: {
             ...process.env,
@@ -159,8 +175,8 @@ export class CreateClientAdminUserHandler implements ICommandHandler<CreateClien
         });
 
         child.on('error', (err) => {
-        console.error('❌ child process error:', err);
-        reject(err);
+            console.error('❌ child process error:', err);
+            reject(err);
         });
     });
     }

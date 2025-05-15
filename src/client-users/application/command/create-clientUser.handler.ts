@@ -11,13 +11,15 @@ import { createUserId } from "@/core/common/utils/userId";
 import { iClientRepositoryForClientUsers } from "@/client-users/infra/adapter/iClient.repository";
 import { iUserRepositoryForClientUsers } from "@/client-users/infra/adapter/iUser.repository";
 import { UserCreatedEvent } from "@/core/domain/userCreate-event";
+import { encryptClientCode } from "@/core/common/utils/crypto";
+import { TenantUserRepository } from "@/core/infra/db/repo/tenant-user.repository";
 
 @Injectable()
 @CommandHandler(CreateClientUserCommand)
 export class CreateClientUserHandler implements ICommandHandler<CreateClientUserCommand> {
     constructor(
         @Inject('ClientRepository') private readonly clientRepository: iClientRepositoryForClientUsers,
-        @Inject('UserRepository') private readonly userRepository: iUserRepositoryForClientUsers,
+        private readonly tenantUserRepository: TenantUserRepository,
         
         private readonly eventBus: EventBus,
     ) {}
@@ -44,8 +46,9 @@ export class CreateClientUserHandler implements ICommandHandler<CreateClientUser
             createdAt: new Date(),
         }
 
-        this.eventBus.publish(new UserCreatedEvent(createUserDbModel.email, createUserDbModel.signupVerifyToken));
-        const user = await this.userRepository.createUser(createUserDbModel);
+        const encryptedClientCode = encryptClientCode(clientCode);
+        this.eventBus.publish(new UserCreatedEvent(createUserDbModel.email, encryptedClientCode, createUserDbModel.signupVerifyToken));
+        const user = await this.tenantUserRepository.createUser(clientCode, createUserDbModel);
         if (!user) {
             throw new Error("User creation failed");
         }        

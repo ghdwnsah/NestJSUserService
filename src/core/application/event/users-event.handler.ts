@@ -14,8 +14,8 @@ export class UserEventsHandler implements IEventHandler<UserCreatedEvent | Reset
     async handle(event: UserCreatedEvent | ResetPasswordEvent ) {
         switch (event.name) {
             case UserCreatedEvent.name: {
-                const { email, signupVerifyToken } = event as UserCreatedEvent;
-                await this.nodemailerEmailService.sendMemberJoinVerification(email, signupVerifyToken);
+                const { email, encryptedClientCode, signupVerifyToken } = event as UserCreatedEvent;
+                await this.nodemailerEmailService.sendMemberJoinVerification(email, encryptedClientCode, signupVerifyToken);
                 break;
             }
             case ResetPasswordEvent.name: {

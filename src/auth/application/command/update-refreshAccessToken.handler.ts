@@ -22,11 +22,11 @@ export class UpdateRefreshAccessTokenHandler implements ICommandHandler<UpdateRe
     ) {}
 
     async execute(command: UpdateRefreshAccessTokenCommand): Promise<any> {
-        const { refreshToken, userId, ip } = command;
+        const { clientCode, refreshToken, userId, ip } = command;
         console.log('execute()')
 
         // refreshToken 유효성 검사
-        let tokenCacheRecord = await this.cacheService.getRefreshTokenCache(userId, refreshToken);
+        let tokenCacheRecord = await this.cacheService.getRefreshTokenCache(clientCode, userId, refreshToken);
         if (!tokenCacheRecord) {
             console.log('캐시에서 못찾음');            
             let refreshDbRecord = await this.refreshTokenRepo.findValidRefreshToken(refreshToken);
@@ -48,7 +48,7 @@ export class UpdateRefreshAccessTokenHandler implements ICommandHandler<UpdateRe
                     await this.authService.handleTokenTheft(tokenCacheRecord.id, ip);
                     // throw new ForbiddenException('Token theft suspected');
                 }
-                return await this.newAccessToken(tokenCacheRecord, ip);
+                return await this.newAccessToken(clientCode, tokenCacheRecord, ip);
             }
         }
 
@@ -60,10 +60,10 @@ export class UpdateRefreshAccessTokenHandler implements ICommandHandler<UpdateRe
             throw new UnauthorizedException('User not found');
         }
 
-        return await this.newAccessToken(user, ip);
+        return await this.newAccessToken(clientCode, user, ip);
     }
 
-    async newAccessToken(user: UserInfo, ip: string) {
+    async newAccessToken(clientCode: string, user: UserInfo, ip: string) {
         // 새 accessToken 발급
         const cachePayload: TokenCachePayload = {
             id: user.id,
@@ -77,8 +77,8 @@ export class UpdateRefreshAccessTokenHandler implements ICommandHandler<UpdateRe
         const newAccessToken = this.jwtService.sign(cachePayload);
 
         // 캐시 절차
-        await this.cacheService.setUserAccessTokenBlacklistCache(user.id);
-        await this.cacheService.setUserAccessTokenCache(user.id, newAccessToken, cachePayload);
+        await this.cacheService.setUserAccessTokenBlacklistCache(clientCode, user.id);
+        await this.cacheService.setUserAccessTokenCache(clientCode, user.id, newAccessToken, cachePayload);
 
         return { accessToken: newAccessToken };
     }

@@ -37,6 +37,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     const accessToken = authHeader?.split(' ')[1];
     console.log('payload : ', payload);
     const userId = payload.id || payload.sub; // payload에서 id 또는 sub 가져오기
+    const clientCode = req['tenantId'];
 
     const forwarded = req.headers['x-forwarded-for'];
     const ip = typeof forwarded === 'string' ? forwarded.split(',')[0] : req.ip;
@@ -45,14 +46,14 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       throw new UnauthorizedException('No token found');
     }
     // 블랙리스트 조회
-    const isBlacklisted = await this.cacheService.getIsAccessTokenBlacklistCache(userId, accessToken);
+    const isBlacklisted = await this.cacheService.getIsAccessTokenBlacklistCache(clientCode, userId, accessToken);
     if (isBlacklisted) {
       console.warn('Access token is blacklisted');
       throw new UnauthorizedException('Access token has been revoked');
     }
   
     // 캐시에서 유저 정보 조회
-    let userInfoCache = await this.cacheService.getAccessTokenCache(userId, accessToken);
+    let userInfoCache = await this.cacheService.getAccessTokenCache(clientCode, userId, accessToken);
     if (userInfoCache) {
       console.log('User loaded from cache');
       console.log('JSON string, parse : ', JSON.parse(JSON.stringify(userInfoCache)));
@@ -86,10 +87,10 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     } 
     const validRefreshToken = userInfoDb.refreshTokens.find(token => token.isValid);
     if (validRefreshToken) { // 리프레시 토큰도 있다면
-      await this.cacheService.setUserAllTokenCache(userInfoDb.id, accessToken, validRefreshToken.token, saveCacheValue)
+      await this.cacheService.setUserAllTokenCache(clientCode, userInfoDb.id, accessToken, validRefreshToken.token, saveCacheValue)
     }
     else {
-      await this.cacheService.setUserAccessTokenCache(userInfoDb.id, accessToken, saveCacheValue)
+      await this.cacheService.setUserAccessTokenCache(clientCode, userInfoDb.id, accessToken, saveCacheValue)
     }
     
     console.log('User loaded from database and cached, user : ', userInfoDb);

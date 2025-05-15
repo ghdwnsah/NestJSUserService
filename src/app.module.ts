@@ -1,4 +1,4 @@
-import { Logger, MiddlewareConsumer, Module } from '@nestjs/common';
+import { Logger, MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { EmailModule } from './email/email.module';
@@ -27,6 +27,7 @@ import { LoggingModule } from './core/infra/logging.module';
 import { SlackModule } from './shared/slack/slack.module';
 import { NotificationModule } from './noti/notification.module';
 import { TenantMiddleware } from './tenant/tenant.middleware';
+import { ClientUsersModule } from './client-users/client-users.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { TenantMiddleware } from './tenant/tenant.middleware';
     EmailModule, 
     AuthModule,
     ClientAdminsModule,
+    ClientUsersModule,
     WinstonModule.forRoot({
 	    transports: [
 	      new winston.transports.Console({
@@ -99,6 +101,12 @@ import { TenantMiddleware } from './tenant/tenant.middleware';
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(TenantMiddleware).forRoutes('*');
+    consumer
+    .apply(TenantMiddleware)
+    .exclude(
+      { path: '/users/email/auth/verify', method: RequestMethod.POST },
+      { path: '/users/email/auth/verify', method: RequestMethod.GET },
+    )
+    .forRoutes({ path: '*', method: RequestMethod.ALL });
   }
 }

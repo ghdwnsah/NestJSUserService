@@ -28,6 +28,11 @@ import { VerifyGenerateTwoFactorQrHandler } from './application/command/verify_g
 import { Login2faTrustedDeviceRegHandler } from './application/command/login_2faTrustedDeviceReg.handler';
 import { DeviceTokenMiddleware } from '@/shared/middleware/device-token.middleware';
 import { VerifyTwoFactorOtpHandler } from './application/command/verify_twoFactorOtp.handler';
+import { TenantUserRepository } from '@/core/infra/db/repo/tenant-user.repository';
+import { TenantModule } from '@/tenant/tenant.module';
+import { TenantRefreshTokenRepository } from '@/core/infra/db/repo/tenant-refreshtoken.repository';
+import { TenantTrustedDeviceRepository } from '@/core/infra/db/repo/tenant-trustedDevice.repository';
+import { TenantIpDenylistRepository } from '@/core/infra/db/repo/tenant-ipDenyList.repository';
 
 
 const CommandHandlers = [
@@ -65,6 +70,7 @@ const StrategyHandlers = [
         }),
         PrismaModule,
         CqrsModule,
+        TenantModule,
     ],
     controllers: [
         AuthController
@@ -80,6 +86,10 @@ const StrategyHandlers = [
         { provide: 'UserRepository', useClass: UserRepository },
         { provide: 'ClientRepository', useClass: ClientRepository },
         { provide: 'RefreshTokenRepository', useClass: RefreshTokenRepository },
+        TenantUserRepository,
+        TenantRefreshTokenRepository,
+        TenantTrustedDeviceRepository,
+        TenantIpDenylistRepository,
         ...CommandHandlers,
     ],
     exports: [

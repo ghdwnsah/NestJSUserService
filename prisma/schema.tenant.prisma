@@ -10,7 +10,7 @@
 
 datasource db {
   provider = "mysql"
-  url      = env("DATABASE_URL_CLIENTCREATE_CL_TESTT")
+  url      = env("DATABASE_URL_CLIENTCREATE_CL_OFJCBFCN")
 }
 
 
@@ -89,5 +89,5 @@ model IpDenylist {
 
 generator client {
   provider = "prisma-client-js"
-  output   = "./generated/client_cl-testt"
+  output   = "./generated/client_cl-ofjcbfcn"
 }

@@ -62,12 +62,13 @@ export class NodemailerEmailService {
 
   async sendMemberJoinVerification(
     emailAddress: string,
+    encryptedClientCode: string,
     signupVerifyToken: string,
   ) {
     console.log('sendMemberJoinVerification()');
     const baseUrl = 'http://localhost:3000';
 
-    const url = `${baseUrl}/users/email/auth/verify?signupVerifyToken=${signupVerifyToken}`;
+    const url = `${baseUrl}/users/email/auth/verify?signupVerifyToken=${signupVerifyToken}&code=${encryptedClientCode}`;
 
     const mailOptions: EmailOptions = {
       to: emailAddress,

@@ -21,28 +21,28 @@ export class ClientAdminsRepository {
         @Inject('UserRepository') private readonly userRepository: iUserRepositoryForClientAdmins,
     ) {}
 
-    async createClientAdminUser(updateClientDbDto: UpdateClientDbDto, createUserDbDto: CreateUserDbModel, tenantClient: PrismaClient): Promise<CreateClientAdminUserResponse> {
-      // 1. 클라이언트 생성 (루트 DB)
-      const client = await this.rootPrisma.client.update({
-        where: { id: updateClientDbDto.id },
-        data: {
-          ...updateClientDbDto,
-          isDbCreated: true,
-        },
-      });
+    // async createClientAdminUser(updateClientDbDto: UpdateClientDbDto, createUserDbDto: CreateUserDbModel, tenantClient: PrismaClient): Promise<CreateClientAdminUserResponse> {
+    //   // 1. 클라이언트 생성 (루트 DB)
+    //   const client = await this.rootPrisma.client.update({
+    //     where: { id: updateClientDbDto.id },
+    //     data: {
+    //       ...updateClientDbDto,
+    //       isDbCreated: true,
+    //     },
+    //   });
 
-      // 3. 테넌트 DB에 사용자 생성
-      const user = await this.tenantUserRepository.createUserWithCustomClient({
-          ...createUserDbDto,
-        },
-        tenantClient
-      );
+    //   // 3. 테넌트 DB에 사용자 생성
+    //   const user = await this.tenantUserRepository.createUserWithCustomClient({
+    //       ...createUserDbDto,
+    //     },
+    //     tenantClient
+    //   );
 
-      return {
-        id: user.id,
-        clientCode: client.clientCode,
-      };
-    }
+    //   return {
+    //     id: user.id,
+    //     clientCode: client.clientCode,
+    //   };
+    // }
 
     async createClient(updateClientDbDto: UpdateClientDbDto): Promise<Client> {
         return await this.rootPrisma.client.update({ 

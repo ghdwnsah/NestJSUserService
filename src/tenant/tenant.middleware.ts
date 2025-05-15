@@ -4,6 +4,11 @@ import { Request, Response, NextFunction } from 'express';
 @Injectable()
 export class TenantMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction) {
+    // favicon.ico 무시
+    if (req.originalUrl === '/favicon.ico') {
+      return next();
+    }
+
     const tenantId = req.headers['x-tenant-id'];
 
     if (!tenantId || typeof tenantId !== 'string') {

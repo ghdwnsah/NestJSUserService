@@ -44,10 +44,12 @@ export class AuthController {
     @ApiDefaultResponses()
     @Public()
     @Post('/users/email/auth/verify')
-    async verifyEmail(@Query() dto: VerifyEmailDto, @Ip() ip: string) {
-        const { signupVerifyToken } = dto;
+    async verifyEmail(@Req() req, @Query() dto: VerifyEmailDto, @Ip() ip: string) {
+        const { code, signupVerifyToken } = dto;
+        console.log('verifyEmail() called, code:', code);
+        console.log('verifyEmail() called, signupVerifyToken:', signupVerifyToken);
 
-        const command = new VerifyUserEmailCommand(signupVerifyToken, ip);
+        const command = new VerifyUserEmailCommand(code, signupVerifyToken, ip);
         return this.commandBus.execute(command);
     }
 
@@ -66,10 +68,11 @@ export class AuthController {
     @ApiDefaultResponses()
     @Public()
     @Post('/users/auth/refresh')
-    async refreshAccessToken(@Body() refreshTokenDto: RefreshAccessTokenDto, @Ip() ip: string) {
+    async refreshAccessToken(@Req() req, @Body() refreshTokenDto: RefreshAccessTokenDto, @Ip() ip: string) {
       const { refreshToken, id } = refreshTokenDto;
+      const clientCode = req.tenantId;
       
-      const command = new UpdateRefreshAccessTokenCommand(id, refreshToken, ip);
+      const command = new UpdateRefreshAccessTokenCommand(clientCode, id, refreshToken, ip);
       return this.commandBus.execute(command);
     }
 
@@ -176,12 +179,9 @@ export class AuthController {
     async updateTrustedDevice(@Req() req, @Body() body: { deviceId: string }) {
       const { deviceId } = body;
       const user = req.user;
+      const clientCode = req.tenantId;
 
-      const command = new UpdateRefreshAccessTokenCommand(user.id, deviceId, user.ip);
-      return this.commandBus.execute(command);  
+      const command = new UpdateRefreshAccessTokenCommand(clientCode, user.id, deviceId, user.ip);
+      return this.commandBus.execute(command);
     }
-
-
-
-
 }

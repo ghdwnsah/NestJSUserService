@@ -28,18 +28,18 @@ export class TenantUserRepository {
     // private readonly tenantPrismaService: TenantPrismaService,
   ) {}
 
-  private async getClient(clientCode: string): Promise<PrismaClient> {
+  private async getTenantClient(clientCode: string): Promise<PrismaClient> {
     return this.tenantPrismaService.getPrismaClientByCode(clientCode);
   }
 
-  async createClientAdminUser(clientCode: string, userDto: CreateUserDbModel): Promise<User> {
-    const client = await this.getClient(clientCode);
-    return client.user.create({ data: userDto });
+  async createUser(clientCode: string, userDto: CreateUserDbModel): Promise<User> {
+    const tenantClient = await this.getTenantClient(clientCode);
+    return tenantClient.user.create({ data: userDto });
   }
 
   async createLegacyCompatibilityClientMeta(clientCode: string, clientId: string, dto: UpdateClientDbDto) {
-    const client = await this.getClient(clientCode);
-    return client.client.create({
+    const tenantClient = await this.getTenantClient(clientCode);
+    return tenantClient.client.create({
       data: {
         id: clientId,
         clientCode,
@@ -48,9 +48,16 @@ export class TenantUserRepository {
     });
   }
 
-  async createUserWithCustomClient(userDto: CreateUserDbModel, prisma: PrismaClient): Promise<User> {
-    return await prisma.user.create({ data: userDto });
+  async findUserBySignupVerifyToken(clientCode: string, signupVerifyToken: string): Promise<User> {
+    const tenantClient = await this.getTenantClient(clientCode);
+    return await tenantClient.user.findFirst({ where: {signupVerifyToken} });
   }
+
+  async updateUserVerifiedTrue(clientCode: string, email: string): Promise<User> {
+    const tenantClient = await this.getTenantClient(clientCode);
+    return await tenantClient.user.update({ where: { email }, data: { verified: true } });
+  }
+
 
   // async createUser(userDbDto: CreateUserDbModel): Promise<User> {
   //   return await this.prisma.user.create({ data: userDbDto });
